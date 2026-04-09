@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, ShoppingBag, Heart, Menu, X, User } from "lucide-react";
+import { Search, ShoppingBag, Heart, Menu, X } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
+import NavbarUserMenu from "./NavbarUserMenu";
 
 const navLinks = [
   { label: "Sandaletler", href: "/kategori/sandaletler" },
@@ -81,9 +82,7 @@ export default function Navbar() {
               <Link href="/favoriler" aria-label="Favoriler" className="p-1 hover:opacity-60 hidden sm:block">
                 <Heart size={20} />
               </Link>
-              <Link href="/giris" aria-label="Hesabım" className="p-1 hover:opacity-60 hidden sm:block">
-                <User size={20} />
-              </Link>
+              <NavbarUserMenu />
               <Link href="/sepet" aria-label="Sepet" className="p-1 hover:opacity-60 relative">
                 <ShoppingBag size={20} />
                 {count > 0 && (
