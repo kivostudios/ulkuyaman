@@ -1,7 +1,22 @@
 import Image from "next/image";
 import { signIn } from "@/auth";
 
-export default function LoginPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  OAuthSignin: "Google bağlantısı başlatılamadı.",
+  OAuthCallback: "Google'dan geri dönüşte hata oluştu.",
+  OAuthCreateAccount: "Hesap oluşturulamadı. Veritabanı bağlantısını kontrol edin.",
+  EmailCreateAccount: "Email ile hesap oluşturulamadı.",
+  Callback: "Giriş callback hatası.",
+  OAuthAccountNotLinked: "Bu email başka bir yöntemle kayıtlı.",
+  default: "Giriş sırasında bir hata oluştu.",
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; callbackUrl?: string }>;
+}) {
+  const { error } = await searchParams;
   return (
     <div className="min-h-[80vh] grid md:grid-cols-2">
       {/* Sol - görsel */}
@@ -30,6 +45,14 @@ export default function LoginPage() {
               Hesabınıza giriş yapın veya üye olun
             </p>
           </div>
+
+          {/* Hata mesajı */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
+              {ERROR_MESSAGES[error] || ERROR_MESSAGES.default}
+              <span className="block mt-1 text-red-400">Kod: {error}</span>
+            </div>
+          )}
 
           {/* Google - Server Action ile */}
           <form
