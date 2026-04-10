@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 const protectedPaths = ["/hesabim", "/siparisler", "/odeme"];
 const adminPaths = ["/admin"];
@@ -6,16 +7,13 @@ const adminPaths = ["/admin"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // PrismaAdapter database sessions kullandığı için JWT değil,
-  // session cookie varlığını kontrol ediyoruz.
-  // (Gerçek doğrulama server-side auth() ile yapılır)
-  const sessionToken =
-    request.cookies.get("__Secure-authjs.session-token")?.value ||
-    request.cookies.get("authjs.session-token")?.value;
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+  });
 
-  const isLoggedIn = !!sessionToken;
+  const isLoggedIn = !!token;
 
-  // Admin koruması
   if (adminPaths.some((p) => pathname.startsWith(p))) {
     if (!isLoggedIn) {
       return NextResponse.redirect(new URL("/giris", request.url));
@@ -23,7 +21,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Kullanıcı koruması
   if (protectedPaths.some((p) => pathname.startsWith(p))) {
     if (!isLoggedIn) {
       const loginUrl = new URL("/giris", request.url);
