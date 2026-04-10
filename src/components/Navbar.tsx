@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, ShoppingBag, Heart, Menu, X } from "lucide-react";
+import { Search, ShoppingBag, Menu, X } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import NavbarUserMenu from "./NavbarUserMenu";
 
@@ -29,8 +29,8 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? "bg-white border-b border-gray-100 shadow-sm" : "bg-white"
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white ${
+          scrolled ? "border-b border-gray-100 shadow-sm" : ""
         }`}
       >
         {/* Top bar */}
@@ -39,58 +39,55 @@ export default function Navbar() {
         </div>
 
         <div className="max-w-[1400px] mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            {/* Mobile menu */}
-            <button
-              className="lg:hidden p-1"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Menü"
-            >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+          <div className="flex items-center justify-between h-16 gap-8">
 
-            {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-8">
+            {/* Sol: Logo */}
+            <Link
+              href="/"
+              className="text-xl font-bold tracking-[0.15em] uppercase text-black shrink-0"
+            >
+              Ülkü Yaman
+            </Link>
+
+            {/* Orta: Desktop nav */}
+            <nav className="hidden lg:flex items-center gap-6 flex-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-sm tracking-widest uppercase text-gray-700 hover:text-black font-medium"
+                  className="text-xs tracking-widest uppercase text-gray-600 hover:text-black font-medium whitespace-nowrap"
                 >
                   {link.label}
                 </Link>
               ))}
             </nav>
 
-            {/* Logo */}
-            <Link
-              href="/"
-              className="absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-[0.2em] uppercase text-black"
-            >
-              Ülkü Yaman
-            </Link>
-
-            {/* Icons */}
-            <div className="flex items-center gap-4">
+            {/* Sağ: İkonlar */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
                 aria-label="Ara"
-                className="p-1 hover:opacity-60"
+                className="p-1.5 hover:opacity-60"
               >
-                <Search size={20} />
+                <Search size={19} />
               </button>
-              <Link href="/favoriler" aria-label="Favoriler" className="p-1 hover:opacity-60 hidden sm:block">
-                <Heart size={20} />
-              </Link>
               <NavbarUserMenu />
-              <Link href="/sepet" aria-label="Sepet" className="p-1 hover:opacity-60 relative">
-                <ShoppingBag size={20} />
+              <Link href="/sepet" aria-label="Sepet" className="p-1.5 hover:opacity-60 relative">
+                <ShoppingBag size={19} />
                 {count > 0 && (
                   <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-medium">
                     {count}
                   </span>
                 )}
               </Link>
+              {/* Mobile hamburger */}
+              <button
+                className="lg:hidden p-1.5"
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Menü"
+              >
+                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
             </div>
           </div>
         </div>
