@@ -3,24 +3,46 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, ShoppingBag, Menu, X } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
+import { useLocale } from "@/lib/locale-store";
 import NavbarUserMenu from "./NavbarUserMenu";
 
-const navLinks = [
-  { label: "Sandaletler", href: "/kategori/sandaletler" },
-  { label: "Topuklu", href: "/kategori/topuklu-ayakkabi" },
-  { label: "Bot & Çizme", href: "/kategori/bot" },
-  { label: "Sneakers", href: "/kategori/sneakers" },
-  { label: "Çanta", href: "/kategori/canta" },
-  { label: "Aksesuar", href: "/kategori/aksesuar" },
-];
+const NAV = {
+  tr: [
+    { label: "MAĞAZA", href: "/kategori/sandaletler" },
+    { label: "AYAKKABI", href: "/kategori/topuklu-ayakkabi" },
+    { label: "ÇANTA", href: "/kategori/canta" },
+    { label: "HİKÂYE", href: "/hakkimizda" },
+  ],
+  en: [
+    { label: "SHOP", href: "/kategori/sandaletler" },
+    { label: "SHOES", href: "/kategori/topuklu-ayakkabi" },
+    { label: "BAGS", href: "/kategori/canta" },
+    { label: "THE STORY", href: "/hakkimizda" },
+  ],
+} as const;
+
+const PROMO = {
+  tr: "250₺ üzeri siparişlerde ücretsiz kargo · 90 gün koşulsuz iade",
+  en: "Free shipping on orders over 250₺ · 90-day unconditional returns",
+};
+
+const SEARCH_PH = {
+  tr: "Ne aramak istersiniz?",
+  en: "What are you looking for?",
+};
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const count = useCartStore((s) => s.count());
+  const { locale, toggle } = useLocale();
+  const activeLocale = mounted ? locale : "tr";
+  const navLinks = NAV[activeLocale];
 
   useEffect(() => {
+    setMounted(true);
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
@@ -29,82 +51,92 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white ${
-          scrolled ? "border-b border-gray-100 shadow-sm" : ""
+        className={`fixed top-0 left-0 right-0 z-50 bg-white transition-shadow ${
+          scrolled ? "shadow-[0_1px_0_0_rgba(0,0,0,0.06)]" : ""
         }`}
       >
-        {/* Top bar */}
-        <div className="bg-black text-white text-xs text-center py-2 tracking-wider">
-          250₺ üzeri siparişlerde ücretsiz kargo &nbsp;|&nbsp; 90 gün koşulsuz iade
+        {/* Top announcement */}
+        <div className="bg-white text-black/70 text-[11px] text-center py-2 border-b border-black/5">
+          {PROMO[activeLocale]}
         </div>
 
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="flex items-center justify-between h-16 gap-8">
+        <div className="px-6 md:px-10">
+          <div className="grid grid-cols-3 items-center h-[68px]">
+            {/* Sol: nav (desktop) / hamburger (mobile) */}
+            <div className="flex items-center">
+              <nav className="hidden lg:flex items-center gap-7">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-[12px] tracking-[0.18em] font-semibold text-black hover:opacity-60 transition-opacity"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+              <button
+                className="lg:hidden p-1.5 -ml-1.5"
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Menu"
+              >
+                {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              </button>
+            </div>
 
-            {/* Sol: Logo */}
+            {/* Orta: brand */}
             <Link
               href="/"
-              className="text-xl font-bold tracking-[0.15em] uppercase text-black shrink-0"
+              className="text-center text-[19px] md:text-[24px] font-semibold tracking-[0.18em] text-black whitespace-nowrap"
             >
-              Ülkü Yaman
+              ÜLKÜ YAMAN
             </Link>
 
-            {/* Orta: Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-6 flex-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-xs tracking-widest uppercase text-gray-600 hover:text-black font-medium whitespace-nowrap"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Sağ: İkonlar */}
-            <div className="flex items-center gap-3">
+            {/* Sağ: araçlar */}
+            <div className="flex items-center justify-end gap-3 md:gap-5">
+              {/* Lang toggle */}
+              <button
+                onClick={toggle}
+                aria-label="Dil değiştir"
+                className="hidden md:flex items-center gap-1 text-[12px] tracking-[0.15em] font-semibold"
+              >
+                <span className={activeLocale === "tr" ? "text-black" : "text-black/30"}>TR</span>
+                <span className="text-black/30">/</span>
+                <span className={activeLocale === "en" ? "text-black" : "text-black/30"}>EN</span>
+              </button>
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
-                aria-label="Ara"
-                className="p-1.5 hover:opacity-60"
+                aria-label="Search"
+                className="p-1 hover:opacity-60"
               >
-                <Search size={19} />
+                <Search size={18} strokeWidth={1.6} />
               </button>
               <NavbarUserMenu />
-              <Link href="/sepet" aria-label="Sepet" className="p-1.5 hover:opacity-60 relative">
-                <ShoppingBag size={19} />
+              <Link href="/sepet" aria-label="Cart" className="p-1 hover:opacity-60 relative">
+                <ShoppingBag size={18} strokeWidth={1.6} />
                 {count > 0 && (
                   <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-medium">
                     {count}
                   </span>
                 )}
               </Link>
-              {/* Mobile hamburger */}
-              <button
-                className="lg:hidden p-1.5"
-                onClick={() => setMenuOpen(!menuOpen)}
-                aria-label="Menü"
-              >
-                {menuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
             </div>
           </div>
         </div>
 
         {/* Search bar */}
         {searchOpen && (
-          <div className="border-t border-gray-100 bg-white px-6 py-4">
-            <div className="max-w-xl mx-auto flex items-center gap-3 border-b border-gray-300 pb-2">
-              <Search size={18} className="text-gray-400" />
+          <div className="border-t border-black/5 bg-white px-6 py-4">
+            <div className="max-w-xl mx-auto flex items-center gap-3 border-b border-black/20 pb-2">
+              <Search size={18} className="text-black/40" />
               <input
                 type="text"
-                placeholder="Ne aramak istersiniz?"
-                className="flex-1 outline-none text-sm text-gray-700 placeholder:text-gray-400"
+                placeholder={SEARCH_PH[activeLocale]}
+                className="flex-1 outline-none text-sm text-black placeholder:text-black/40"
                 autoFocus
               />
               <button onClick={() => setSearchOpen(false)}>
-                <X size={18} className="text-gray-400" />
+                <X size={18} className="text-black/40" />
               </button>
             </div>
           </div>
@@ -113,27 +145,33 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 bg-white pt-24 px-8 lg:hidden">
+        <div className="fixed inset-0 z-40 bg-white pt-28 px-8 lg:hidden">
           <nav className="flex flex-col gap-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="text-lg tracking-widest uppercase text-gray-800 hover:text-black border-b border-gray-100 pb-4"
+                className="text-[15px] tracking-[0.15em] font-semibold text-black border-b border-black/10 pb-4"
               >
                 {link.label}
               </Link>
             ))}
-            <Link href="/hakkimizda" onClick={() => setMenuOpen(false)} className="text-sm text-gray-500 mt-4">
-              Hakkımızda
-            </Link>
+            <button
+              onClick={() => {
+                toggle();
+                setMenuOpen(false);
+              }}
+              className="text-[13px] tracking-[0.15em] font-semibold text-black/70 mt-4 self-start"
+            >
+              {activeLocale === "tr" ? "EN" : "TR"} →
+            </button>
           </nav>
         </div>
       )}
 
       {/* Spacer */}
-      <div className="h-[88px]" />
+      <div className="h-[104px]" />
     </>
   );
 }
