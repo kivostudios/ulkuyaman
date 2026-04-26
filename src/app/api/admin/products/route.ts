@@ -7,6 +7,7 @@ export async function GET() {
   if (error) return error;
 
   const products = await prisma.product.findMany({
+    where: { deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { orderItems: true } } },
   });

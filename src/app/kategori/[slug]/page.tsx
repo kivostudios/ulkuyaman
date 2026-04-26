@@ -26,7 +26,7 @@ export default async function CategoryPage({ params }: Props) {
   const catName = CATEGORY_NAMES[slug];
 
   const products = await prisma.product.findMany({
-    where: { active: true, category: { equals: catName, mode: "insensitive" } },
+    where: { active: true, deletedAt: null, category: { equals: catName, mode: "insensitive" } },
     orderBy: { sortOrder: "asc" },
   });
 

@@ -54,7 +54,7 @@ export async function GET() {
     // Bu ay yeni kullanıcı
     prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
     // Aktif ürün
-    prisma.product.count({ where: { active: true } }),
+    prisma.product.count({ where: { active: true, deletedAt: null } }),
     // Son 10 sipariş
     prisma.order.findMany({
       take: 10,

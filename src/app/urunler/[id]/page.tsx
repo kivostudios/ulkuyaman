@@ -10,18 +10,24 @@ type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const product = await prisma.product.findUnique({ where: { id }, select: { name: true } });
+  const product = await prisma.product.findFirst({
+    where: { id, deletedAt: null },
+    select: { name: true },
+  });
   return { title: product ? `${product.name} | Ülkü Yaman` : "Ürün" };
 }
 
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
 
-  const product = await prisma.product.findUnique({ where: { id, active: true } });
+  const product = await prisma.product.findFirst({
+    where: { id, active: true, deletedAt: null },
+    include: { variants: true },
+  });
   if (!product) notFound();
 
   const related = await prisma.product.findMany({
-    where: { category: product.category, id: { not: id }, active: true },
+    where: { category: product.category, id: { not: id }, active: true, deletedAt: null },
     take: 4,
   });
 
@@ -73,6 +79,8 @@ export default async function ProductPage({ params }: Props) {
           {/* Renk + Numara + Sepet — client component */}
           <AddToCart
             product={{ id: product.id, name: product.name, price: product.price, images: product.images, colors: product.colors }}
+            variants={product.variants.map((v) => ({ color: v.color, size: v.size, stock: v.stock }))}
+            fallbackStock={product.stock}
           />
 
           {product.description && (

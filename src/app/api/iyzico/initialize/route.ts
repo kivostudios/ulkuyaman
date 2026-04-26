@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getIyzipay } from "@/lib/iyzico";
 import { validateCoupon } from "@/lib/coupon";
+import { rateLimit, ipFrom } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,15 @@ export async function POST(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const userId = session.user.id;
+
+  // Ödeme başlatma 60sn'de 5 kez yeterli — daha fazlasi sahtekarlik/abuse
+  const rl = rateLimit(`iyzico:init:${userId}`, 5, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Çok hızlı denedin. Birazdan tekrar dene." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.resetMs / 1000)) } }
+    );
+  }
 
   const { addressId, couponCode } = (await req.json()) as {
     addressId?: string;
@@ -49,22 +59,37 @@ export async function POST(req: NextRequest): Promise<Response> {
   const prepared = await prisma.$transaction(async (tx) => {
     const cartItems = await tx.cartItem.findMany({
       where: { userId },
-      include: { product: true },
+      include: { product: { include: { variants: true } } },
     });
     if (!cartItems.length) {
       throw new HttpError(400, "Sepet boş");
     }
 
-    // Stok kontrolü
+    // Stok kontrolu: varyant varsa o (color, size) varyantinin stok'una bak,
+    // yoksa product.stock fallback.
     for (const item of cartItems) {
-      if (!item.product.active) {
+      if (!item.product.active || item.product.deletedAt) {
         throw new HttpError(409, `${item.product.name} satışta değil.`);
       }
-      if (item.product.stock < item.quantity) {
-        throw new HttpError(
-          409,
-          `${item.product.name} için yeterli stok yok. (kalan: ${item.product.stock})`
-        );
+      const variants = item.product.variants;
+      if (variants.length > 0) {
+        const v = variants.find((x) => x.color === item.color && x.size === item.size);
+        if (!v) {
+          throw new HttpError(409, `${item.product.name} (${item.color}, ${item.size}) bulunamadı.`);
+        }
+        if (v.stock < item.quantity) {
+          throw new HttpError(
+            409,
+            `${item.product.name} (${item.color}, beden ${item.size}) için yeterli stok yok. (kalan: ${v.stock})`
+          );
+        }
+      } else {
+        if (item.product.stock < item.quantity) {
+          throw new HttpError(
+            409,
+            `${item.product.name} için yeterli stok yok. (kalan: ${item.product.stock})`
+          );
+        }
       }
     }
 
@@ -94,11 +119,26 @@ export async function POST(req: NextRequest): Promise<Response> {
     );
 
     // Stok düş — pessimistic, ödeme başarısız olursa callback'te geri ekleriz
+    // Varyant varsa varyantın stoğunu düş, yoksa product.stock'tan düş.
     for (const item of cartItems) {
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
-      });
+      const hasVariants = item.product.variants.length > 0;
+      if (hasVariants) {
+        await tx.productVariant.update({
+          where: {
+            productId_color_size: {
+              productId: item.productId,
+              color: item.color,
+              size: item.size,
+            },
+          },
+          data: { stock: { decrement: item.quantity } },
+        });
+      } else {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } },
+        });
+      }
     }
 
     const order = await tx.order.create({

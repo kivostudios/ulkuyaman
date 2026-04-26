@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ShoppingBag, Heart, Check } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 
@@ -11,20 +11,53 @@ type ProductProp = {
   colors: string[];
 };
 
+type Variant = { color: string; size: string; stock: number };
+
 const DEFAULT_SIZES = ["36", "37", "38", "39", "40", "41"];
 
-export default function AddToCart({ product, sizes }: { product: ProductProp; sizes?: string[] }) {
+export default function AddToCart({
+  product,
+  variants = [],
+  fallbackStock,
+  sizes,
+}: {
+  product: ProductProp;
+  variants?: Variant[];
+  fallbackStock?: number;
+  sizes?: string[];
+}) {
   const [added, setAdded] = useState(false);
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] ?? "");
   const [selectedSize, setSelectedSize] = useState("");
   const [wished, setWished] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
 
-  const sizeList = sizes?.length ? sizes : DEFAULT_SIZES;
+  const hasVariants = variants.length > 0;
+
+  const sizeList = useMemo(() => {
+    if (sizes?.length) return sizes;
+    if (hasVariants) {
+      const all = Array.from(new Set(variants.map((v) => v.size)));
+      return all.sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+    }
+    return DEFAULT_SIZES;
+  }, [sizes, hasVariants, variants]);
+
+  const stockFor = (color: string, size: string): number => {
+    if (!hasVariants) return fallbackStock ?? 0;
+    return variants.find((v) => v.color === color && v.size === size)?.stock ?? 0;
+  };
+
+  const selectedStock = selectedColor && selectedSize ? stockFor(selectedColor, selectedSize) : null;
+  const outOfStock = selectedStock !== null && selectedStock <= 0;
 
   const handleAdd = () => {
     if (!selectedSize) {
       alert("Lütfen numara seçiniz.");
+      return;
+    }
+    if (outOfStock) {
+      alert("Bu numara stokta yok.");
       return;
     }
     addItem(product as never, selectedColor, selectedSize);
@@ -67,22 +100,36 @@ export default function AddToCart({ product, sizes }: { product: ProductProp; si
           <span className="text-xs text-gray-400">Numara Rehberi</span>
         </div>
         <div className="grid grid-cols-6 gap-2">
-          {sizeList.map((size) => (
-            <button
-              key={size}
-              onClick={() => setSelectedSize(size)}
-              className={`border py-2 text-sm transition-colors ${
-                selectedSize === size
-                  ? "border-black bg-black text-white"
-                  : "border-gray-200 hover:border-black"
-              }`}
-            >
-              {size}
-            </button>
-          ))}
+          {sizeList.map((size) => {
+            const stock = stockFor(selectedColor, size);
+            const disabled = hasVariants && stock <= 0;
+            return (
+              <button
+                key={size}
+                disabled={disabled}
+                onClick={() => setSelectedSize(size)}
+                className={`border py-2 text-sm transition-colors relative ${
+                  selectedSize === size
+                    ? "border-black bg-black text-white"
+                    : disabled
+                    ? "border-gray-100 text-gray-300 line-through cursor-not-allowed"
+                    : "border-gray-200 hover:border-black"
+                }`}
+                aria-label={disabled ? `${size} numara stokta yok` : size}
+              >
+                {size}
+              </button>
+            );
+          })}
         </div>
         {!selectedSize && (
           <p className="text-xs text-red-400 mt-2">Lütfen numara seçiniz</p>
+        )}
+        {selectedSize && selectedStock !== null && selectedStock > 0 && selectedStock <= 3 && (
+          <p className="text-xs text-orange-500 mt-2">Son {selectedStock} adet — acele et</p>
+        )}
+        {outOfStock && (
+          <p className="text-xs text-red-500 mt-2">Bu kombinasyon stokta yok</p>
         )}
       </div>
 
@@ -90,7 +137,8 @@ export default function AddToCart({ product, sizes }: { product: ProductProp; si
       <div className="flex gap-3">
         <button
           onClick={handleAdd}
-          className={`flex-1 flex items-center justify-center gap-3 py-4 text-sm tracking-widest uppercase font-semibold transition-colors ${
+          disabled={outOfStock}
+          className={`flex-1 flex items-center justify-center gap-3 py-4 text-sm tracking-widest uppercase font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             added ? "bg-green-600 text-white" : "bg-black text-white hover:bg-gray-800"
           }`}
         >
