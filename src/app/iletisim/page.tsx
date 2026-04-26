@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Phone, MapPin, Instagram, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, AtSign, Clock } from "lucide-react";
 import { COMPANY } from "@/lib/company";
 
 export const metadata = { title: "İletişim | Ülkü Yaman Collection" };
@@ -54,7 +54,7 @@ export default function IletisimPage() {
           </div>
 
           <div className="flex gap-4">
-            <Instagram size={20} className="text-black/60 mt-0.5 shrink-0" />
+            <AtSign size={20} className="text-black/60 mt-0.5 shrink-0" />
             <div>
               <p className="text-xs uppercase tracking-widest text-black/50 mb-1">Instagram</p>
               <a

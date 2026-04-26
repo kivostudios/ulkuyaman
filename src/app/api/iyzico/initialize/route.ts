@@ -11,6 +11,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const { addressId, couponCode } = (await req.json()) as {
     addressId?: string;
@@ -21,13 +22,13 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   const address = await prisma.address.findFirst({
-    where: { id: addressId, userId: session.user.id },
+    where: { id: addressId, userId },
   });
   if (!address) {
     return NextResponse.json({ error: "Adres bulunamadı" }, { status: 404 });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
     return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
   }
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   // Sipariş hazırlanırken stoğu rezerve etmek + kupon kullanımını artırmak için tek transaction
   const prepared = await prisma.$transaction(async (tx) => {
     const cartItems = await tx.cartItem.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       include: { product: true },
     });
     if (!cartItems.length) {
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
     const order = await tx.order.create({
       data: {
-        userId: session.user.id,
+        userId,
         status: "PENDING",
         subtotal,
         shippingCost,
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     callbackUrl,
     enabledInstallments: [1, 2, 3, 6, 9, 12],
     buyer: {
-      id: session.user.id,
+      id: userId,
       name: firstName,
       surname: lastName,
       email: user.email || "",
