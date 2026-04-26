@@ -57,8 +57,9 @@ export async function POST(req: NextRequest) {
     data: {
       userId: session.user.id,
       status: "PENDING",
-      total,
+      subtotal,
       shippingCost,
+      total,
       addressSnapshot: address,
       items: {
         create: cartItems.map((i) => ({

@@ -9,7 +9,7 @@ export default function AddressSection({ initialAddresses }: Props) {
   const [addresses, setAddresses] = useState(initialAddresses);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({
-    name: "", phone: "", city: "", district: "", address: "", postalCode: "", isDefault: false,
+    name: "", phone: "", tcKimlik: "", city: "", district: "", address: "", postalCode: "", isDefault: false,
   });
 
   const submit = async (e: React.FormEvent) => {
@@ -27,7 +27,7 @@ export default function AddressSection({ initialAddresses }: Props) {
           : [...prev, data]
       );
       setAdding(false);
-      setForm({ name: "", phone: "", city: "", district: "", address: "", postalCode: "", isDefault: false });
+      setForm({ name: "", phone: "", tcKimlik: "", city: "", district: "", address: "", postalCode: "", isDefault: false });
     }
   };
 
@@ -69,9 +69,21 @@ export default function AddressSection({ initialAddresses }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <input required placeholder="Ad Soyad" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-black col-span-2" />
             <input required placeholder="Telefon" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-black" />
-            <input required placeholder="Posta Kodu" value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} className="border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-black" />
+            <input
+              required
+              inputMode="numeric"
+              pattern="[0-9]{11}"
+              maxLength={11}
+              placeholder="T.C. Kimlik No"
+              value={form.tcKimlik}
+              onChange={(e) =>
+                setForm({ ...form, tcKimlik: e.target.value.replace(/\D/g, "").slice(0, 11) })
+              }
+              className="border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-black"
+            />
             <input required placeholder="İl" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-black" />
             <input required placeholder="İlçe" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className="border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-black" />
+            <input placeholder="Posta Kodu" value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} className="border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-black col-span-2" />
             <textarea required placeholder="Açık adres" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={3} className="border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-black col-span-2 resize-none" />
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">

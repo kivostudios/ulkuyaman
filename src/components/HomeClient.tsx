@@ -29,11 +29,11 @@ const dict = {
     shopAll: "TÜMÜ",
     atelierTitle: "ATÖLYE — MANİSA",
     atelierCta: "KEŞFET",
-    categoriesHeading: "KATEGORİYE GÖRE KEŞFET",
+    categoriesHeading: "KOLEKSİYONU KEŞFET",
     cats: [
-      { tr: "SANDALETLER", slug: "sandaletler", image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1200&q=92", cta: "Sandaletleri İncele" },
-      { tr: "TOPUKLU", slug: "topuklu-ayakkabi", image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1200&q=92", cta: "Topukluları İncele" },
-      { tr: "ÇANTA", slug: "canta", image: "https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1200&q=92", cta: "Çantaları İncele" },
+      { tr: "TÜM SANDALETLER", slug: "sandaletler", image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1200&q=92", cta: "Tümünü İncele", href: "/sandaletler" },
+      { tr: "YENİ GELENLER", slug: "yeni", image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1200&q=92", cta: "Yeni Sezon", href: "/sandaletler?yeni=1" },
+      { tr: "İNDİRİM", slug: "indirim", image: "https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1200&q=92", cta: "Fırsatları Gör", href: "/sandaletler?indirim=1" },
     ],
     journalHeading: "GÜNCE",
     journalBody:
@@ -56,11 +56,11 @@ const dict = {
     shopAll: "SHOP ALL",
     atelierTitle: "THE ATELIER — MANISA",
     atelierCta: "DISCOVER",
-    categoriesHeading: "SHOP BY CATEGORY",
+    categoriesHeading: "EXPLORE THE COLLECTION",
     cats: [
-      { tr: "SANDALS", slug: "sandaletler", image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1200&q=92", cta: "Shop Sandals" },
-      { tr: "HEELS", slug: "topuklu-ayakkabi", image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1200&q=92", cta: "Shop Heels" },
-      { tr: "BAGS", slug: "canta", image: "https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1200&q=92", cta: "Shop Bags" },
+      { tr: "ALL SANDALS", slug: "sandaletler", image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1200&q=92", cta: "Shop All", href: "/sandaletler" },
+      { tr: "NEW IN", slug: "yeni", image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1200&q=92", cta: "New Season", href: "/sandaletler?yeni=1" },
+      { tr: "SALE", slug: "indirim", image: "https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1200&q=92", cta: "Shop Sale", href: "/sandaletler?indirim=1" },
     ],
     journalHeading: "THE JOURNAL",
     journalBody:
@@ -237,7 +237,7 @@ export default function HomeClient({ newArrivals, bestsellers }: Props) {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
           {t.cats.map((cat) => (
-            <Link key={cat.slug} href={`/kategori/${cat.slug}`} className="group block">
+            <Link key={cat.slug} href={cat.href} className="group block">
               <div className="relative aspect-[4/5] bg-[#efece6] overflow-hidden">
                 <Image
                   src={cat.image}
@@ -268,7 +268,7 @@ export default function HomeClient({ newArrivals, bestsellers }: Props) {
               {t.bestsellers}
             </h2>
             <Link
-              href="/kategori/sandaletler"
+              href="/sandaletler"
               className="text-[11px] tracking-[0.2em] uppercase font-semibold border-b border-black pb-0.5 hover:opacity-60 transition-opacity"
             >
               {t.shopAll}

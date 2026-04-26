@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -15,6 +17,7 @@ export async function POST(req: NextRequest) {
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const bytes = await file.arrayBuffer();
 
+  const supabase = getSupabase();
   const { error: uploadError } = await supabase.storage
     .from("products")
     .upload(filename, bytes, { contentType: file.type, upsert: false });
