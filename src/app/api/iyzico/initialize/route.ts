@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { iyzipay } from "@/lib/iyzico";
+import { getIyzipay } from "@/lib/iyzico";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest): Promise<Response> {
   const session = await auth();
@@ -108,6 +110,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     })),
   };
 
+  const iyzipay = getIyzipay();
   return new Promise<Response>((resolve) => {
     iyzipay.checkoutFormInitialize.create(request, (err: unknown, result: { status: string; checkoutFormContent?: string; errorMessage?: string }) => {
       if (err || result.status !== "success") {

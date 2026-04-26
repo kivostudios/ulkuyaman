@@ -1,11 +1,32 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Iyzipay = require("iyzipay");
 
-export const iyzipay = new Iyzipay({
-  apiKey: process.env.IYZICO_API_KEY,
-  secretKey: process.env.IYZICO_SECRET_KEY,
-  uri: process.env.IYZICO_BASE_URL || "https://sandbox-api.iyzipay.com",
-});
+type IyzipayClient = {
+  checkoutFormInitialize: { create: (req: unknown, cb: (err: unknown, res: { status: string; checkoutFormContent?: string; errorMessage?: string }) => void) => void };
+  checkoutForm: { retrieve: (req: unknown, cb: (err: unknown, res: { status: string; paymentStatus?: string; paymentId?: string }) => void) => void };
+};
+
+let client: IyzipayClient | null = null;
+
+export function getIyzipay(): IyzipayClient {
+  if (client) return client;
+
+  const apiKey = process.env.IYZICO_API_KEY;
+  const secretKey = process.env.IYZICO_SECRET_KEY;
+
+  if (!apiKey || !secretKey) {
+    throw new Error(
+      "Iyzico env vars missing: set IYZICO_API_KEY and IYZICO_SECRET_KEY."
+    );
+  }
+
+  client = new Iyzipay({
+    apiKey,
+    secretKey,
+    uri: process.env.IYZICO_BASE_URL || "https://sandbox-api.iyzipay.com",
+  });
+  return client!;
+}
 
 export type IyzicoAddress = {
   contactName: string;

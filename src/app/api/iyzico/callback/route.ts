@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { iyzipay } from "@/lib/iyzico";
+import { getIyzipay } from "@/lib/iyzico";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest): Promise<Response> {
   const orderId = req.nextUrl.searchParams.get("orderId");
@@ -13,6 +15,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     );
   }
 
+  const iyzipay = getIyzipay();
   return new Promise<Response>((resolve) => {
     iyzipay.checkoutForm.retrieve(
       { locale: "tr", token },
