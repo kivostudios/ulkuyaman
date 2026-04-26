@@ -37,6 +37,9 @@ export default function EditProduct({ params }: Props) {
           colors: product.colors as string[],
           images: product.images as string[],
           active: product.active as boolean,
+          variants: ((product.variants as Array<{ color: string; size: string; stock: number }> | undefined) || []).map(
+            (v) => ({ color: v.color, size: v.size, stock: v.stock })
+          ),
         }}
       />
     </div>

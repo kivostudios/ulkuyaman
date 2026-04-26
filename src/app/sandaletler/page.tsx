@@ -34,6 +34,7 @@ export default async function SandaletlerPage({ searchParams }: { searchParams: 
 
   const where: Prisma.ProductWhereInput = {
     active: true,
+    deletedAt: null,
     category: { equals: "Sandaletler", mode: "insensitive" },
   };
 
@@ -66,7 +67,7 @@ export default async function SandaletlerPage({ searchParams }: { searchParams: 
   const [products, allSandals] = await Promise.all([
     prisma.product.findMany({ where, orderBy, take: 60 }),
     prisma.product.findMany({
-      where: { active: true, category: { equals: "Sandaletler", mode: "insensitive" } },
+      where: { active: true, deletedAt: null, category: { equals: "Sandaletler", mode: "insensitive" } },
       select: { colors: true, subcategory: true, price: true },
     }),
   ]);

@@ -48,12 +48,24 @@ export async function POST(req: NextRequest): Promise<Response> {
 
         if (failed || priceMismatch) {
           await prisma.$transaction(async (tx) => {
-            // Stok geri ver, kupon kullanım sayacını geri al
+            // Stok geri ver, kupon kullanım sayacını geri al.
+            // Initialize'da varyantın stoğunu düştüysek, geri verirken de varyanta geri vermeliyiz.
             for (const item of order.items) {
-              await tx.product.update({
-                where: { id: item.productId },
+              const variantBack = await tx.productVariant.updateMany({
+                where: {
+                  productId: item.productId,
+                  color: item.color,
+                  size: item.size,
+                },
                 data: { stock: { increment: item.quantity } },
               });
+              if (variantBack.count === 0) {
+                // Varyant yoktu, product.stock fallback'inden düşülmüştü
+                await tx.product.update({
+                  where: { id: item.productId },
+                  data: { stock: { increment: item.quantity } },
+                });
+              }
             }
             if (order.couponCode) {
               await tx.coupon

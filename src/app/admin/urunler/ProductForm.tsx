@@ -2,15 +2,19 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { X, Upload, Loader2 } from "lucide-react";
+import { X, Upload, Loader2, Plus } from "lucide-react";
+
+type Variant = { color: string; size: string; stock: number };
 
 type ProductData = {
   name: string; description: string; price: string; category: string;
   stock: string; colors: string[]; images: string[]; active: boolean;
+  variants: Variant[];
 };
 
 const COLORS = ["Siyah", "Beyaz", "Kahverengi", "Bej", "Lacivert", "Kırmızı", "Gri", "Tan", "Nude"];
 const CATEGORIES = ["Topuklu", "Düz", "Bot", "Sandalet", "Sneaker", "Loafer", "Terlik", "Diğer"];
+const DEFAULT_SIZES = ["36", "37", "38", "39", "40", "41"];
 
 type Props = {
   initialData?: Partial<ProductData>;
@@ -32,6 +36,7 @@ export default function ProductForm({ initialData, productId }: Props) {
     colors: initialData?.colors || [],
     images: initialData?.images || [],
     active: initialData?.active ?? true,
+    variants: initialData?.variants || [],
   });
 
   const update = (k: keyof ProductData, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
@@ -57,6 +62,28 @@ export default function ProductForm({ initialData, productId }: Props) {
 
   const removeImage = (url: string) => update("images", form.images.filter((i) => i !== url));
 
+  const generateVariantMatrix = () => {
+    if (!form.colors.length) {
+      alert("Önce en az bir renk seç.");
+      return;
+    }
+    const existing = new Map(form.variants.map((v) => [`${v.color}|${v.size}`, v.stock]));
+    const rows: Variant[] = [];
+    for (const c of form.colors) {
+      for (const s of DEFAULT_SIZES) {
+        const key = `${c}|${s}`;
+        rows.push({ color: c, size: s, stock: existing.get(key) ?? 0 });
+      }
+    }
+    update("variants", rows);
+  };
+
+  const addVariantRow = () => update("variants", [...form.variants, { color: form.colors[0] || "", size: "", stock: 0 }]);
+  const removeVariantRow = (i: number) =>
+    update("variants", form.variants.filter((_, idx) => idx !== i));
+  const updateVariant = (i: number, patch: Partial<Variant>) =>
+    update("variants", form.variants.map((v, idx) => (idx === i ? { ...v, ...patch } : v)));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -66,7 +93,15 @@ export default function ProductForm({ initialData, productId }: Props) {
         {
           method: productId ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, price: parseFloat(form.price), stock: parseInt(form.stock), colors: form.colors }),
+          body: JSON.stringify({
+            ...form,
+            price: parseFloat(form.price),
+            stock: parseInt(form.stock),
+            colors: form.colors,
+            variants: form.variants
+              .filter((v) => v.color && v.size)
+              .map((v) => ({ color: v.color, size: v.size, stock: Number(v.stock) || 0 })),
+          }),
         }
       );
       if (res.ok) router.push("/admin/urunler");
@@ -110,7 +145,9 @@ export default function ProductForm({ initialData, productId }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Stok</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Toplam Stok <span className="text-gray-400 font-normal">(varyant yoksa fallback)</span>
+                </label>
                 <input
                   type="number" min="0" value={form.stock}
                   onChange={(e) => update("stock", e.target.value)}
@@ -118,6 +155,77 @@ export default function ProductForm({ initialData, productId }: Props) {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Variants */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-sm font-semibold">Beden / Renk Stokları</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Burada satır varsa müşteri o (renk × beden) için stoğa göre satın alabilir. Boşsa toplam stok kullanılır.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button" onClick={generateVariantMatrix}
+                  className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                >
+                  Renkler × Bedenler matrisi oluştur
+                </button>
+                <button
+                  type="button" onClick={addVariantRow}
+                  className="text-xs flex items-center gap-1 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                >
+                  <Plus size={12} /> Satır
+                </button>
+              </div>
+            </div>
+
+            {form.variants.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">Henüz varyant yok. Yukarıdaki "matris oluştur" butonu hızlı başlatır.</p>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="grid grid-cols-[1fr_120px_120px_36px] gap-2 text-[10px] uppercase tracking-wider text-gray-400 px-1">
+                  <div>Renk</div>
+                  <div>Beden</div>
+                  <div>Stok</div>
+                  <div></div>
+                </div>
+                {form.variants.map((v, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_120px_120px_36px] gap-2 items-center">
+                    <select
+                      value={v.color}
+                      onChange={(e) => updateVariant(i, { color: e.target.value })}
+                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                    >
+                      <option value="">—</option>
+                      {(form.colors.length ? form.colors : COLORS).map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={v.size}
+                      onChange={(e) => updateVariant(i, { size: e.target.value })}
+                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                      placeholder="36"
+                    />
+                    <input
+                      type="number" min="0" value={v.stock}
+                      onChange={(e) => updateVariant(i, { stock: parseInt(e.target.value) || 0 })}
+                      className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                    />
+                    <button
+                      type="button" onClick={() => removeVariantRow(i)}
+                      className="text-red-500 hover:bg-red-50 rounded-lg p-1.5"
+                      aria-label="Sil"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Images */}
