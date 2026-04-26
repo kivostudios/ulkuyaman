@@ -8,23 +8,18 @@ import NavbarUserMenu from "./NavbarUserMenu";
 
 const NAV = {
   tr: [
-    { label: "MAĞAZA", href: "/kategori/sandaletler" },
-    { label: "AYAKKABI", href: "/kategori/topuklu-ayakkabi" },
-    { label: "ÇANTA", href: "/kategori/canta" },
+    { label: "TÜM SANDALETLER", href: "/sandaletler" },
+    { label: "YENİ GELENLER", href: "/sandaletler?yeni=1" },
+    { label: "İNDİRİM", href: "/sandaletler?indirim=1" },
     { label: "HİKÂYE", href: "/hakkimizda" },
   ],
   en: [
-    { label: "SHOP", href: "/kategori/sandaletler" },
-    { label: "SHOES", href: "/kategori/topuklu-ayakkabi" },
-    { label: "BAGS", href: "/kategori/canta" },
-    { label: "THE STORY", href: "/hakkimizda" },
+    { label: "ALL SANDALS", href: "/sandaletler" },
+    { label: "NEW IN", href: "/sandaletler?yeni=1" },
+    { label: "SALE", href: "/sandaletler?indirim=1" },
+    { label: "STORY", href: "/hakkimizda" },
   ],
 } as const;
-
-const PROMO = {
-  tr: "250₺ üzeri siparişlerde ücretsiz kargo · 90 gün koşulsuz iade",
-  en: "Free shipping on orders over 250₺ · 90-day unconditional returns",
-};
 
 const SEARCH_PH = {
   tr: "Ne aramak istersiniz?",
@@ -55,21 +50,16 @@ export default function Navbar() {
           scrolled ? "shadow-[0_1px_0_0_rgba(0,0,0,0.06)]" : ""
         }`}
       >
-        {/* Top announcement */}
-        <div className="bg-white text-black/70 text-[11px] text-center py-2 border-b border-black/5">
-          {PROMO[activeLocale]}
-        </div>
-
         <div className="px-6 md:px-10">
           <div className="grid grid-cols-3 items-center h-[68px]">
             {/* Sol: nav (desktop) / hamburger (mobile) */}
             <div className="flex items-center">
-              <nav className="hidden lg:flex items-center gap-7">
+              <nav className="hidden lg:flex items-center gap-6">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-[12px] tracking-[0.18em] font-semibold text-black hover:opacity-60 transition-opacity"
+                    className="text-[11.5px] tracking-[0.18em] font-semibold text-black hover:opacity-60 transition-opacity"
                   >
                     {link.label}
                   </Link>
@@ -94,7 +84,6 @@ export default function Navbar() {
 
             {/* Sağ: araçlar */}
             <div className="flex items-center justify-end gap-3 md:gap-5">
-              {/* Lang toggle */}
               <button
                 onClick={toggle}
                 aria-label="Dil değiştir"
@@ -124,28 +113,31 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Search bar */}
         {searchOpen && (
           <div className="border-t border-black/5 bg-white px-6 py-4">
-            <div className="max-w-xl mx-auto flex items-center gap-3 border-b border-black/20 pb-2">
+            <form
+              action="/sandaletler"
+              method="GET"
+              className="max-w-xl mx-auto flex items-center gap-3 border-b border-black/20 pb-2"
+            >
               <Search size={18} className="text-black/40" />
               <input
                 type="text"
+                name="q"
                 placeholder={SEARCH_PH[activeLocale]}
                 className="flex-1 outline-none text-sm text-black placeholder:text-black/40"
                 autoFocus
               />
-              <button onClick={() => setSearchOpen(false)}>
+              <button type="button" onClick={() => setSearchOpen(false)} aria-label="Close">
                 <X size={18} className="text-black/40" />
               </button>
-            </div>
+            </form>
           </div>
         )}
       </header>
 
-      {/* Mobile menu */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 bg-white pt-28 px-8 lg:hidden">
+        <div className="fixed inset-0 z-40 bg-white pt-24 px-8 lg:hidden">
           <nav className="flex flex-col gap-6">
             {navLinks.map((link) => (
               <Link
@@ -170,8 +162,7 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Spacer */}
-      <div className="h-[104px]" />
+      <div className="h-[68px]" />
     </>
   );
 }

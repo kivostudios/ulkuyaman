@@ -16,7 +16,12 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; callbackUrl?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, callbackUrl } = await searchParams;
+  // Open redirect koruması: sadece site içi yollara izin ver.
+  const safeCallback =
+    callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+      ? callbackUrl
+      : "/";
   return (
     <div className="min-h-[80vh] grid md:grid-cols-2">
       {/* Sol - görsel */}
@@ -58,7 +63,7 @@ export default async function LoginPage({
           <form
             action={async () => {
               "use server";
-              await signIn("google", { redirectTo: "/" });
+              await signIn("google", { redirectTo: safeCallback });
             }}
           >
             <button

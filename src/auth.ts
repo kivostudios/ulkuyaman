@@ -7,7 +7,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   callbacks: {
     ...authConfig.callbacks,
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
       // İlk giriş: Google'dan kullanıcı bilgisi gelir
       if (user && account?.provider === "google") {
         try {
@@ -23,12 +23,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
           token.id = dbUser.id;
           token.role = dbUser.role;
+          token.roleCheckedAt = Date.now();
         } catch {
-          // DB hatası login'i engellesin
           token.id = user.id;
           token.role = "USER";
+          token.roleCheckedAt = Date.now();
         }
       }
+
+      // Role yenileme: token üzerindeki role bayatlamış olabilir
+      // (ör. kullanıcı sonradan ADMIN yapıldı). 5 dakikada bir tazele.
+      const FIVE_MIN = 5 * 60 * 1000;
+      const last = (token.roleCheckedAt as number | undefined) ?? 0;
+      const isStale = trigger === "update" || Date.now() - last > FIVE_MIN;
+      if (token.id && isStale) {
+        try {
+          const fresh = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true },
+          });
+          if (fresh) token.role = fresh.role;
+          token.roleCheckedAt = Date.now();
+        } catch {
+          // DB erişilemiyor: eski role'le devam et
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {

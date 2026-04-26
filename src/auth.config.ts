@@ -19,9 +19,12 @@ export const authConfig: NextAuthConfig = {
       const isProtected =
         nextUrl.pathname.startsWith("/hesabim") ||
         nextUrl.pathname.startsWith("/siparisler") ||
-        nextUrl.pathname.startsWith("/odeme");
+        nextUrl.pathname.startsWith("/odeme") ||
+        nextUrl.pathname.startsWith("/admin");
       if (isProtected && !isLoggedIn) {
-        return Response.redirect(new URL("/giris", nextUrl));
+        const loginUrl = new URL("/giris", nextUrl);
+        loginUrl.searchParams.set("callbackUrl", nextUrl.pathname + nextUrl.search);
+        return Response.redirect(loginUrl);
       }
       return true;
     },

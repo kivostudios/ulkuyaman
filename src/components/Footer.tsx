@@ -11,35 +11,32 @@ export default function Footer() {
               Ülkü Yaman
             </h2>
             <p className="text-sm text-gray-400 leading-relaxed">
-              Günlük yaşamın koşuşturmacasında şık ve rahat olan herşey.
-              Manisa&apos;dan Türkiye&apos;ye, hakiki deri kalitesi.
+              Manisa atölyemizde el yapımı, hakiki deri kadın sandaletleri.
+              Sade, dayanıklı, ayırt edilebilir.
             </p>
             <div className="flex gap-4 mt-6">
-              <a href="https://instagram.com/ulkuyamancollection" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
+              <a
+                href="https://instagram.com/ulkuyamancollection"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white"
+              >
                 <span className="text-sm font-bold">IG</span>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <span className="text-sm font-bold">FB</span>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <span className="text-sm font-bold">YT</span>
               </a>
             </div>
           </div>
 
-          {/* Koleksiyonlar */}
+          {/* Alışveriş */}
           <div>
             <h3 className="text-xs tracking-widest uppercase font-semibold mb-5 text-gray-200">
-              Koleksiyonlar
+              Alışveriş
             </h3>
             <ul className="space-y-3">
               {[
-                ["Sandaletler", "/kategori/sandaletler"],
-                ["Topuklu Ayakkabı", "/kategori/topuklu-ayakkabi"],
-                ["Bot & Çizme", "/kategori/bot"],
-                ["Sneakers", "/kategori/sneakers"],
-                ["Çanta", "/kategori/canta"],
-                ["Aksesuar", "/kategori/aksesuar"],
+                ["Tüm Sandaletler", "/sandaletler"],
+                ["Yeni Gelenler", "/sandaletler?yeni=1"],
+                ["İndirimde", "/sandaletler?indirim=1"],
+                ["Çok Satanlar", "/sandaletler?siralama=popular"],
               ].map(([label, href]) => (
                 <li key={href}>
                   <Link href={href} className="text-sm text-gray-400 hover:text-white">
@@ -57,11 +54,14 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3">
               {[
-                ["Teslimat Koşulları", "/teslimat"],
-                ["İptal & İade", "/iade"],
-                ["Gizlilik Politikası", "/gizlilik"],
-                ["Mesafeli Satış Sözleşmesi", "/sozlesme"],
                 ["İletişim", "/iletisim"],
+                ["Hakkımızda", "/hakkimizda"],
+                ["Teslimat & İade", "/iade-cayma"],
+                ["Mesafeli Satış Sözleşmesi", "/mesafeli-satis"],
+                ["Ön Bilgilendirme Formu", "/on-bilgilendirme"],
+                ["Gizlilik Politikası", "/gizlilik"],
+                ["KVKK Aydınlatma Metni", "/kvkk"],
+                ["Çerez Politikası", "/cerez"],
               ].map(([label, href]) => (
                 <li key={href}>
                   <Link href={href} className="text-sm text-gray-400 hover:text-white">
@@ -72,41 +72,43 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* İletişim & Bülten */}
+          {/* İletişim */}
           <div>
             <h3 className="text-xs tracking-widest uppercase font-semibold mb-5 text-gray-200">
-              Bülten
+              İletişim
             </h3>
-            <p className="text-sm text-gray-400 mb-4">
-              Yeni koleksiyonlar ve özel indirimler için abone olun.
+            <p className="text-xs text-gray-500 mb-1">Telefon</p>
+            <a href="tel:+905074530166" className="text-sm text-gray-300 hover:text-white">
+              +90 507 453 01 66
+            </a>
+            <p className="text-xs text-gray-500 mt-3 mb-1">E-posta</p>
+            <a
+              href="mailto:info@ulkuyamancollection.com"
+              className="text-sm text-gray-300 hover:text-white break-all"
+            >
+              info@ulkuyamancollection.com
+            </a>
+            <p className="text-xs text-gray-500 mt-3 mb-1">Adres</p>
+            <p className="text-sm text-gray-300">
+              Güzelyurt Mah. 5749 Sok. No: 10/A,
+              <br />
+              Yunusemre / Manisa
             </p>
-            <div className="flex border border-white/20 rounded-none">
-              <input
-                type="email"
-                placeholder="E-posta adresiniz"
-                className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 px-4 py-3 outline-none"
-              />
-              <button className="bg-white text-black text-xs tracking-widest uppercase px-4 font-semibold hover:bg-gray-100 transition-colors">
-                Abone
-              </button>
-            </div>
-
-            <div className="mt-8">
-              <p className="text-xs text-gray-500 mb-1">Telefon</p>
-              <p className="text-sm text-gray-300">+90 507 453 01 66</p>
-              <p className="text-xs text-gray-500 mt-3 mb-1">E-posta</p>
-              <p className="text-sm text-gray-300">info@ulkuyamancollection.com</p>
-              <p className="text-xs text-gray-500 mt-3 mb-1">Adres</p>
-              <p className="text-sm text-gray-300">Güzelyurt Mah. 5749 Sok. No: 10/A, Yunusemre / Manisa</p>
-            </div>
           </div>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 text-xs text-gray-500 gap-4">
-          <p>© 2025 Ülkü Yaman Collection. Tüm hakları saklıdır.</p>
-          <div className="flex gap-6">
-            <Link href="/gizlilik" className="hover:text-white">Gizlilik</Link>
-            <Link href="/sozlesme" className="hover:text-white">Kullanım Şartları</Link>
+          <p>© {new Date().getFullYear()} Ülkü Yaman Collection. Tüm hakları saklıdır.</p>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <Link href="/gizlilik" className="hover:text-white">
+              Gizlilik
+            </Link>
+            <Link href="/kvkk" className="hover:text-white">
+              KVKK
+            </Link>
+            <Link href="/cerez" className="hover:text-white">
+              Çerezler
+            </Link>
           </div>
         </div>
       </div>
