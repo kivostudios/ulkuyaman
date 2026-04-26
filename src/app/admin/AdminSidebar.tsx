@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Image as ImageIcon,
-  LogOut, ChevronRight,
+  Tag, LogOut, ChevronRight, ExternalLink,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -12,6 +12,7 @@ const nav = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Ürünler", href: "/admin/urunler", icon: Package },
   { label: "Siparişler", href: "/admin/siparisler", icon: ShoppingBag },
+  { label: "Kuponlar", href: "/admin/kuponlar", icon: Tag },
   { label: "Kullanıcılar", href: "/admin/kullanicilar", icon: Users },
   { label: "İçerik & Tasarım", href: "/admin/icerik", icon: ImageIcon },
 ];
@@ -25,10 +26,15 @@ export default function AdminSidebar({ user }: Props) {
     <aside className="fixed left-0 top-0 h-full w-64 bg-black text-white flex flex-col z-50">
       {/* Logo */}
       <div className="px-6 py-6 border-b border-white/10">
-        <Link href="/" className="text-sm font-bold tracking-[0.2em] uppercase block">
-          Ülkü Yaman
-        </Link>
+        <p className="text-sm font-bold tracking-[0.2em] uppercase">Ülkü Yaman</p>
         <p className="text-xs text-gray-500 mt-0.5 tracking-widest uppercase">Admin</p>
+        <Link
+          href="/"
+          target="_blank"
+          className="mt-3 inline-flex items-center gap-1.5 text-[10px] tracking-widest uppercase text-gray-400 hover:text-white"
+        >
+          Siteyi Aç <ExternalLink size={11} />
+        </Link>
       </div>
 
       {/* Nav */}

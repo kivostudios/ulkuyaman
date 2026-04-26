@@ -6,6 +6,11 @@ import { z } from "zod";
 const addressSchema = z.object({
   name: z.string().min(2),
   phone: z.string().min(10),
+  tcKimlik: z
+    .string()
+    .regex(/^[0-9]{11}$/, "T.C. kimlik no 11 haneli olmalı")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
   city: z.string().min(2),
   district: z.string().min(2),
   address: z.string().min(10),
