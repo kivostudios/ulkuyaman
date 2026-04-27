@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/admin";
 import { getSupabase } from "@/lib/supabase";
 
@@ -6,7 +7,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8MB. Client tarafı zaten ~3MB altina kucultuyor.
+const MAX_BYTES = 8 * 1024 * 1024;
+
+const VALID_EXTS = new Set(["jpg", "jpeg", "png", "webp", "avif", "gif"]);
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -28,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
   if (file.size > MAX_BYTES) {
     return NextResponse.json(
-      { error: `Dosya cok buyuk (${Math.round(file.size / 1024 / 1024)}MB). Limit 8MB. Lutfen kucultup tekrar dene.` },
+      { error: `Dosya cok buyuk (${Math.round(file.size / 1024 / 1024)}MB). Limit 8MB.` },
       { status: 413 }
     );
   }
@@ -36,8 +39,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Yalnizca resim dosyalari kabul edilir." }, { status: 400 });
   }
 
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  // Filename: sadece [a-z0-9-] karakterleri.
+  // Date prefix + UUID, ext mime'dan turetiliyor (file.name dependency'siz).
+  const mimeExt = file.type.split("/")[1]?.toLowerCase() || "jpg";
+  const ext = VALID_EXTS.has(mimeExt) ? (mimeExt === "jpeg" ? "jpg" : mimeExt) : "jpg";
+  const filename = `${Date.now()}-${randomUUID()}.${ext}`;
+
   const bytes = await file.arrayBuffer();
 
   let supabase;
@@ -56,7 +63,10 @@ export async function POST(req: NextRequest) {
 
   if (uploadError) {
     return NextResponse.json(
-      { error: `Supabase yukleme hatasi: ${uploadError.message}` },
+      {
+        error: `Supabase yukleme hatasi: ${uploadError.message}`,
+        debug: { filename, size: file.size, type: file.type },
+      },
       { status: 500 }
     );
   }
@@ -64,3 +74,4 @@ export async function POST(req: NextRequest) {
   const { data } = supabase.storage.from("products").getPublicUrl(filename);
   return NextResponse.json({ url: data.publicUrl });
 }
+
