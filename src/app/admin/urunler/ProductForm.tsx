@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { X, Upload, Loader2, Plus, Star, ArrowUp, ArrowDown, Maximize2 } from "lucide-react";
-import { parseImageEditable, joinImageUrl } from "@/lib/image-meta";
+import { X, Upload, Loader2, Plus, Star, ArrowUp, ArrowDown, Maximize2, Crop } from "lucide-react";
+import { parseImageEditable } from "@/lib/image-meta";
+import CropEditor from "@/components/admin/CropEditor";
 
 type Variant = { color: string; size: string; stock: number };
 
@@ -17,79 +18,6 @@ const COLORS = ["Siyah", "Beyaz", "Kahverengi", "Bej", "Lacivert", "Kırmızı",
 const CATEGORIES = ["Topuklu", "Düz", "Bot", "Sandalet", "Sneaker", "Loafer", "Terlik", "Diğer"];
 const DEFAULT_SIZES = ["36", "37", "38", "39", "40", "41"];
 
-// FocusPicker: foto'ya tıkla/sürükle, kırpma odak noktasını sec.
-// Storefront'ta object-position olarak uygulanır; aspect-ratio uyumsuz fotolarda
-// odak noktasi merkezde kalir, kenarlardan kirpilir.
-function FocusPicker({
-  url,
-  x,
-  y,
-  onChange,
-}: {
-  url: string;
-  x: number;
-  y: number;
-  onChange: (x: number, y: number) => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const handle = (e: PointerEvent | React.PointerEvent) => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const px = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    const py = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-    onChange(Math.round(px), Math.round(py));
-  };
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    e.preventDefault();
-    setDragging(true);
-    handle(e);
-    const move = (ev: PointerEvent) => handle(ev);
-    const up = () => {
-      setDragging(false);
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-  };
-
-  return (
-    <div
-      ref={ref}
-      onPointerDown={onPointerDown}
-      className="relative aspect-[3/4] bg-gray-50 cursor-crosshair touch-none select-none overflow-hidden"
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={url}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{ objectPosition: `${x}% ${y}%` }}
-        draggable={false}
-      />
-      {/* Odak goster — beyaz halka + ic dot, sayfa kararliligi icin transform ile */}
-      <div
-        className={`absolute pointer-events-none ${dragging ? "" : "transition-all"}`}
-        style={{
-          left: `${x}%`,
-          top: `${y}%`,
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <div className="w-6 h-6 rounded-full ring-2 ring-white bg-black/40 flex items-center justify-center shadow-lg">
-          <div className="w-1.5 h-1.5 rounded-full bg-white" />
-        </div>
-      </div>
-      {/* Yatay/dikey kilavuz cizgileri (subtle) */}
-      <div className="absolute inset-x-0 top-1/2 h-px bg-white/15 pointer-events-none" />
-      <div className="absolute inset-y-0 left-1/2 w-px bg-white/15 pointer-events-none" />
-    </div>
-  );
-}
 
 // Tarayici tarafinda fotoyu max 2000px genislik + 80% kalite ile yeniden boyutlandir.
 // Vercel function body limiti ~4.5MB, 8MP foto kolay 6MB+ oluyor; bu ile altina iniyor.
@@ -138,6 +66,7 @@ export default function ProductForm({ initialData, productId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
+  const [cropIdx, setCropIdx] = useState<number | null>(null);
 
   const [form, setForm] = useState<ProductData>({
     name: initialData?.name || "",
@@ -193,11 +122,6 @@ export default function ProductForm({ initialData, productId }: Props) {
   };
   const setPrimary = (i: number) => moveImage(i, 0);
   const removeImageAt = (i: number) => update("images", form.images.filter((_, idx) => idx !== i));
-  const setFocusAt = (i: number, fx: number, fy: number) => {
-    const { url } = parseImageEditable(form.images[i]);
-    update("images", form.images.map((x, idx) => (idx === i ? joinImageUrl(url, fx, fy) : x)));
-  };
-
   const generateVariantMatrix = () => {
     if (!form.colors.length) {
       alert("Önce en az bir renk seç.");
@@ -413,7 +337,7 @@ export default function ProductForm({ initialData, productId }: Props) {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {form.images.map((raw, i) => {
-                  const { url, x: fx, y: fy } = parseImageEditable(raw);
+                  const { url } = parseImageEditable(raw);
                   const isPrimary = i === 0;
                   return (
                     <div
@@ -422,51 +346,53 @@ export default function ProductForm({ initialData, productId }: Props) {
                         isPrimary ? "border-black ring-2 ring-black/5" : "border-gray-200"
                       }`}
                     >
-                      <div className="relative">
-                        <FocusPicker
-                          url={url}
-                          x={fx}
-                          y={fy}
-                          onChange={(nx, ny) => setFocusAt(i, nx, ny)}
+                      <div
+                        className="relative aspect-[3/4] bg-gray-50 cursor-pointer"
+                        onClick={() => setCropIdx(i)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Foto ${i + 1}`}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          draggable={false}
                         />
                         {isPrimary && (
-                          <span className="absolute top-2 left-2 text-[10px] tracking-widest uppercase bg-black text-white px-2 py-0.5 rounded pointer-events-none">
+                          <span className="absolute top-2 left-2 text-[10px] tracking-widest uppercase bg-black text-white px-2 py-0.5 rounded">
                             Ana
                           </span>
                         )}
-                        <span className="absolute top-2 right-2 text-[10px] bg-white/90 px-1.5 py-0.5 rounded text-gray-600 pointer-events-none">
+                        <span className="absolute top-2 right-2 text-[10px] bg-white/90 px-1.5 py-0.5 rounded text-gray-600">
                           {i + 1}/{form.images.length}
                         </span>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <span className="bg-white text-black text-xs px-3 py-1.5 rounded flex items-center gap-1.5 font-medium">
+                            <Crop size={12} /> Kırp
+                          </span>
+                        </div>
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setPreviewIdx(i); }}
-                          className="absolute bottom-2 right-2 w-7 h-7 bg-white/90 hover:bg-white rounded flex items-center justify-center shadow"
+                          className="absolute bottom-2 right-2 w-7 h-7 bg-white/90 hover:bg-white rounded flex items-center justify-center shadow z-10"
                           title="Büyük göster"
                         >
                           <Maximize2 size={13} />
                         </button>
                       </div>
 
-                      <div className="p-2 space-y-1.5 bg-white">
-                        <p className="text-[10px] text-gray-500 leading-tight">
-                          Fotoya tıklayıp/sürükleyerek odak noktasını seç.
-                          <br />
-                          <span className="text-gray-400 font-mono">x:{fx} y:{fy}</span>
-                          {(fx !== 50 || fy !== 50) && (
-                            <button
-                              type="button"
-                              onClick={() => setFocusAt(i, 50, 50)}
-                              className="ml-2 text-gray-500 underline hover:text-black"
-                            >
-                              sıfırla
-                            </button>
-                          )}
-                        </p>
+                      <div className="p-2 bg-white">
                         <div className="flex gap-1">
+                          <button
+                            type="button" onClick={() => setCropIdx(i)}
+                            className="flex-1 text-[11px] border border-gray-200 rounded px-1.5 py-1 hover:bg-gray-50 flex items-center justify-center gap-1"
+                            title="Kırp"
+                          >
+                            <Crop size={11} /> Kırp
+                          </button>
                           <button
                             type="button" onClick={() => setPrimary(i)}
                             disabled={isPrimary}
-                            className="flex-1 text-[11px] border border-gray-200 rounded px-1.5 py-1 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                            className="text-[11px] border border-gray-200 rounded px-1.5 py-1 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                             title="Ana foto yap"
                           >
                             <Star size={11} className={isPrimary ? "fill-black" : ""} />
@@ -579,7 +505,22 @@ export default function ProductForm({ initialData, productId }: Props) {
         </div>
       </div>
 
-      {/* Preview modal — büyük göster (object-contain ile tam goster, kirpma yok) */}
+      {/* Crop editor */}
+      {cropIdx !== null && form.images[cropIdx] && (
+        <CropEditor
+          url={parseImageEditable(form.images[cropIdx]).url}
+          onApply={(newUrl) => {
+            setForm((f) => ({
+              ...f,
+              images: f.images.map((x, idx) => (idx === cropIdx ? newUrl : x)),
+            }));
+            setCropIdx(null);
+          }}
+          onClose={() => setCropIdx(null)}
+        />
+      )}
+
+      {/* Preview modal — büyük göster */}
       {previewIdx !== null && form.images[previewIdx] && (
         <div
           className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-6"
