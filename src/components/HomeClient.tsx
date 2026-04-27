@@ -17,10 +17,8 @@ type Props = {
   bestsellers: CardProduct[];
 };
 
-// Hero gorseli. Daha luks/editorial bir model+sandalet shotu.
-// Kendi atolye fotonu yukleyince direkt URL'i degistir (Supabase Storage da olabilir).
-const HERO_IMG =
-  "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=2400&q=92&auto=format&fit=crop";
+// Hero gorseli /public altinda; Next.js Image otomatik optimize ediyor.
+const HERO_IMG = "/hero.png";
 const ABOUT_IMG_1 =
   "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1400&q=92&auto=format&fit=crop";
 const ABOUT_IMG_2 =
