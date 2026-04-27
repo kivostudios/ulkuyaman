@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useLocale } from "@/lib/locale-store";
 
 type CardProduct = {
   id: string;
@@ -18,330 +17,529 @@ type Props = {
   bestsellers: CardProduct[];
 };
 
-const dict = {
-  tr: {
-    campaign: "Bahar / Yaz 2026 Kampanyası",
-    aboutHeading: "ÜLKÜ YAMAN HAKKINDA",
-    aboutBody:
-      "Ülkü Yaman Collection, gündelik fonksiyon içinde heykelsi formu araştıran ayakkabı ve çantalar tasarlar. Manisa'daki atölyemizde, sertifikalı hakiki deri ile bağımsız ustalar tarafından elle üretilir. Sade, ölçülü, ama ayırt edilebilir bir estetiği savunuyoruz — modern hayatın ritmiyle doğal şekilde hareket eden parçalar.",
-    newArrivals: "YENİ GELENLER",
-    bestsellers: "ÇOK SATANLAR",
-    shopAll: "TÜMÜ",
-    atelierTitle: "ATÖLYE — MANİSA",
-    atelierCta: "KEŞFET",
-    categoriesHeading: "KOLEKSİYONU KEŞFET",
-    cats: [
-      { tr: "TÜM SANDALETLER", slug: "sandaletler", image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1200&q=92", cta: "Tümünü İncele", href: "/sandaletler" },
-      { tr: "YENİ GELENLER", slug: "yeni", image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1200&q=92", cta: "Yeni Sezon", href: "/sandaletler?yeni=1" },
-      { tr: "İNDİRİM", slug: "indirim", image: "https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1200&q=92", cta: "Fırsatları Gör", href: "/sandaletler?indirim=1" },
-    ],
-    journalHeading: "GÜNCE",
-    journalBody:
-      "Atölye notları, sezon kampanyaları ve sınırlı sayıda üretilen parçalardan ilk siz haberdar olun.",
-    journalCta: "DEVAMINI OKU",
-    newsletterHeading: "BÜLTEN",
-    newsletterBody:
-      "Yeni siluetler, özel davetler ve atölye haberleri için listemize katılın.",
-    emailPh: "E-posta adresiniz",
-    subscribe: "ABONE OL",
-    noProducts: "Henüz ürün yok.",
-  },
-  en: {
-    campaign: "Spring / Summer 2026 Campaign",
-    aboutHeading: "ABOUT ÜLKÜ YAMAN",
-    aboutBody:
-      "Ülkü Yaman Collection designs footwear and handbags that explore sculptural form through everyday function. Handmade in our Manisa atelier with certified genuine leather by independent artisans. We stand for an understated yet recognisable aesthetic — pieces that move naturally with the rhythm of modern life.",
-    newArrivals: "NEW ARRIVALS",
-    bestsellers: "BESTSELLERS",
-    shopAll: "SHOP ALL",
-    atelierTitle: "THE ATELIER — MANISA",
-    atelierCta: "DISCOVER",
-    categoriesHeading: "EXPLORE THE COLLECTION",
-    cats: [
-      { tr: "ALL SANDALS", slug: "sandaletler", image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1200&q=92", cta: "Shop All", href: "/sandaletler" },
-      { tr: "NEW IN", slug: "yeni", image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1200&q=92", cta: "New Season", href: "/sandaletler?yeni=1" },
-      { tr: "SALE", slug: "indirim", image: "https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1200&q=92", cta: "Shop Sale", href: "/sandaletler?indirim=1" },
-    ],
-    journalHeading: "THE JOURNAL",
-    journalBody:
-      "Be the first to hear about atelier notes, seasonal campaigns and limited-run pieces.",
-    journalCta: "READ MORE",
-    newsletterHeading: "NEWSLETTER",
-    newsletterBody:
-      "Join our list for new silhouettes, private invitations and atelier news.",
-    emailPh: "Your email",
-    subscribe: "SUBSCRIBE",
-    noProducts: "No products yet.",
-  },
-} as const;
+const HERO_IMG =
+  "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=2400&q=92&auto=format&fit=crop";
+const ABOUT_IMG_1 =
+  "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1400&q=92&auto=format&fit=crop";
+const ABOUT_IMG_2 =
+  "https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1400&q=92&auto=format&fit=crop";
+const CRAFT_IMGS = [
+  "https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?w=1200&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1605733513597-a8f8341084e6?w=1200&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=1200&q=90&auto=format&fit=crop",
+];
+const CAT_IMGS = [
+  "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1400&q=92&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1400&q=92&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1400&q=92&auto=format&fit=crop",
+];
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1603487742131-4160ec999306?w=900&q=90&auto=format&fit=crop";
 
-export default function HomeClient({ newArrivals, bestsellers }: Props) {
-  const { locale } = useLocale();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const t = dict[mounted ? locale : "tr"];
+const TESTIMONIALS = [
+  {
+    quote:
+      "Bir çift sandalet değil, alışkanlığa dönüştü. Üç sezondur giyiyorum, deri yumuşadıkça daha güzel.",
+    author: "Defne K.",
+    city: "İstanbul",
+  },
+  {
+    quote:
+      "Manisa'daki atölyeyi ziyaret ettim — her bir parça gerçekten elden geçiyor. Hak ettiği özen.",
+    author: "Selin A.",
+    city: "İzmir",
+  },
+  {
+    quote:
+      "Hem yazlık hem akşam giyilebilen az şeyden biri. Heykelsi ama mütevazı.",
+    author: "Ayşe T.",
+    city: "Ankara",
+  },
+];
 
-  const [tab, setTab] = useState<"new" | "best">("best");
-  const tabItems = tab === "best" ? bestsellers : newArrivals;
+// ── REVEAL ────────────────────────────────────────────────────────────────
+function useReveal() {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && setVisible(true)),
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+    );
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, []);
+  return [ref, visible] as const;
+}
+
+function Reveal({
+  children,
+  delay = 0,
+  className = "",
+  style = {},
+}: {
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  const [ref, visible] = useReveal();
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        ...style,
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(28px)",
+        transition: `opacity 1.1s cubic-bezier(.2,.7,.2,1) ${delay}s, transform 1.1s cubic-bezier(.2,.7,.2,1) ${delay}s`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ── HERO ──────────────────────────────────────────────────────────────────
+function Hero() {
+  return (
+    <section className="uy-hero">
+      <div className="uy-hero-img">
+        <Image
+          src={HERO_IMG}
+          alt="Ülkü Yaman SS26"
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: "cover" }}
+        />
+      </div>
+
+      <div className="uy-hero-eyebrow">
+        <span className="uy-dot" />
+        <span>BAHAR / YAZ 2026</span>
+      </div>
+
+      <div className="uy-hero-headline">
+        <h1>
+          <span className="line">Heykelsi siluetler,</span>
+          <span className="line italic">gündelik bir dilde.</span>
+        </h1>
+      </div>
+
+      <div className="uy-hero-foot">
+        <div className="uy-hero-meta">
+          <span>EL YAPIMI · MANİSA</span>
+          <span className="uy-sep">—</span>
+          <span>SERTİFİKALI HAKİKİ DERİ</span>
+        </div>
+        <Link href="/sandaletler?yeni=1" className="uy-cta">
+          KOLEKSİYONU GÖR
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+// ── MARQUEE ───────────────────────────────────────────────────────────────
+function Marquee() {
+  const items = [
+    "EL YAPIMI",
+    "✦",
+    "MANİSA ATÖLYESİ",
+    "✦",
+    "HAKİKİ DERİ",
+    "✦",
+    "SINIRLI ÜRETİM",
+    "✦",
+    "TÜRKİYE'YE ÜCRETSİZ KARGO",
+    "✦",
+  ];
+  const row = [...items, ...items, ...items];
+  return (
+    <div className="uy-marquee" aria-hidden="true">
+      <div className="uy-marquee-track">
+        {row.map((t, i) => (
+          <span key={i} className={t === "✦" ? "uy-mark" : "uy-mword"}>
+            {t}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── ABOUT ─────────────────────────────────────────────────────────────────
+function About() {
+  return (
+    <section className="uy-about" id="hikaye">
+      <Reveal className="uy-about-text">
+        <span className="uy-eyebrow">— ÜLKÜ YAMAN HAKKINDA</span>
+        <h2 className="uy-display">
+          Gündelik fonksiyonun içinde <em>heykelsi formu</em> arayan ayakkabılar.
+        </h2>
+        <p>
+          Manisa&apos;daki atölyemizde, sertifikalı hakiki deri ile bağımsız ustalar tarafından
+          elle üretilir. Sade, ölçülü, ama ayırt edilebilir bir estetiği savunuyoruz —
+          modern hayatın ritmiyle doğal şekilde hareket eden parçalar.
+        </p>
+      </Reveal>
+
+      <div className="uy-about-grid">
+        <Reveal delay={0.1} className="uy-about-img is-tall">
+          <Image src={ABOUT_IMG_1} alt="" fill sizes="(max-width: 980px) 50vw, 25vw" style={{ objectFit: "cover" }} />
+        </Reveal>
+        <Reveal delay={0.2} className="uy-about-img is-short">
+          <Image src={ABOUT_IMG_2} alt="" fill sizes="(max-width: 980px) 50vw, 25vw" style={{ objectFit: "cover" }} />
+          <div className="uy-about-tag">
+            <span>FW · 24</span>
+            <span>Manisa, TR</span>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ── PRODUCT GRID ──────────────────────────────────────────────────────────
+function ProductGrid({ bestsellers, newArrivals }: { bestsellers: CardProduct[]; newArrivals: CardProduct[] }) {
+  const [tab, setTab] = useState<"best" | "new">("best");
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const items = tab === "best" ? bestsellers : newArrivals;
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    let isDown = false,
+      startX = 0,
+      startScroll = 0;
+    const down = (e: MouseEvent) => {
+      isDown = true;
+      el.classList.add("is-grabbing");
+      startX = e.pageX - el.offsetLeft;
+      startScroll = el.scrollLeft;
+    };
+    const up = () => {
+      isDown = false;
+      el.classList.remove("is-grabbing");
+    };
+    const move = (e: MouseEvent) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - el.offsetLeft;
+      el.scrollLeft = startScroll - (x - startX) * 1.2;
+    };
+    el.addEventListener("mousedown", down);
+    window.addEventListener("mouseup", up);
+    el.addEventListener("mouseleave", up);
+    el.addEventListener("mousemove", move);
+    return () => {
+      el.removeEventListener("mousedown", down);
+      window.removeEventListener("mouseup", up);
+      el.removeEventListener("mouseleave", up);
+      el.removeEventListener("mousemove", move);
+    };
+  }, []);
+
+  const nudge = (dir: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.7, behavior: "smooth" });
+  };
 
   return (
-    <div className="bg-white text-black">
-      {/* ───────── HERO ───────── */}
-      <section className="relative w-full">
-        <div className="relative w-full aspect-[16/9] md:aspect-[2.4/1] min-h-[480px] md:min-h-[620px] bg-[#1a1410] overflow-hidden">
-          <Image
-            src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=2400&q=95"
-            alt="Ülkü Yaman Collection — SS26"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-center"
-          />
-        </div>
-        <div className="px-6 md:px-10 pt-8 pb-2">
-          <h1 className="text-[15px] md:text-[16px] font-bold tracking-[0.2em] uppercase">
-            {t.campaign}
-          </h1>
-        </div>
-      </section>
-
-      {/* ───────── ABOUT ───────── */}
-      <section className="px-6 md:px-10 py-24 md:py-32">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-[15px] font-bold tracking-[0.2em] uppercase mb-8">
-            {t.aboutHeading}
-          </h2>
-          <p className="text-[15px] md:text-base leading-[1.9] text-black/85 max-w-3xl mx-auto">
-            {t.aboutBody}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mt-20 md:mt-28">
-          <div className="relative aspect-[4/5] bg-[#efece6] overflow-hidden">
-            <Image
-              src="https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=1400&q=92"
-              alt="Editorial portrait"
-              fill
-              sizes="50vw"
-              className="object-cover grayscale"
-            />
+    <section className="uy-shop" id="yeni">
+      <Reveal>
+        <div className="uy-shop-head">
+          <div className="uy-tabs">
+            <button className={tab === "best" ? "is-active" : ""} onClick={() => setTab("best")}>
+              ÇOK SATANLAR
+            </button>
+            <button className={tab === "new" ? "is-active" : ""} onClick={() => setTab("new")}>
+              YENİ GELENLER
+            </button>
           </div>
-          <div className="relative aspect-[4/5] bg-[#efece6] overflow-hidden">
-            <Image
-              src="https://images.unsplash.com/photo-1596703263926-eb0762ee17e4?w=1400&q=92"
-              alt="Editorial portrait"
-              fill
-              sizes="50vw"
-              className="object-cover"
-            />
+          <div className="uy-shop-nudge">
+            <span className="uy-hint">SÜRÜKLE</span>
+            <button onClick={() => nudge(-1)} aria-label="Önceki">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <path d="M19 12H5M11 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button onClick={() => nudge(1)} aria-label="Sonraki">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </button>
           </div>
         </div>
-      </section>
+      </Reveal>
 
-      {/* ───────── PRODUCT GRID + TABS ───────── */}
-      <section className="px-6 md:px-10 pb-24 md:pb-32">
-        <h2 className="text-[15px] font-bold tracking-[0.2em] uppercase mb-6">
-          {t.newArrivals}
-        </h2>
-        <div className="flex items-center gap-8 mb-10 md:mb-12">
-          <button
-            onClick={() => setTab("best")}
-            className={`text-[13px] tracking-[0.18em] uppercase pb-1 transition-all ${
-              tab === "best"
-                ? "font-bold text-black border-b border-black"
-                : "font-medium text-black/40 hover:text-black/70"
-            }`}
-          >
-            {t.bestsellers}
-          </button>
-          <button
-            onClick={() => setTab("new")}
-            className={`text-[13px] tracking-[0.18em] uppercase pb-1 transition-all ${
-              tab === "new"
-                ? "font-bold text-black border-b border-black"
-                : "font-medium text-black/40 hover:text-black/70"
-            }`}
-          >
-            {t.shopAll}
-          </button>
+      {items.length === 0 ? (
+        <div style={{ padding: "0 32px", color: "var(--muted)", fontSize: 14 }}>
+          Bu kategoride şu an gösterilecek ürün yok.
         </div>
-
-        {tabItems.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-5">
-            {tabItems.map((p) => (
-              <Link key={p.id} href={`/urunler/${p.id}`} className="group block">
-                <div className="relative aspect-square bg-[#f3f1ed] overflow-hidden">
-                  {p.image && (
-                    <Image
-                      src={p.image}
-                      alt={p.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 20vw"
-                      className="object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
-                    />
-                  )}
-                </div>
-                <div className="mt-4">
-                  <p className="text-[12px] font-bold tracking-[0.15em] uppercase">
-                    {p.name}
-                  </p>
-                  <p className="text-[12px] mt-1 text-black/80">
-                    ₺{p.price.toLocaleString("tr-TR")}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-black/50 py-12 text-center">{t.noProducts}</p>
-        )}
-
-        <div className="flex items-center justify-center gap-6 mt-12">
-          <button aria-label="Prev" className="text-black/30" disabled>
-            <ChevronLeft size={22} strokeWidth={1.6} />
-          </button>
-          <button aria-label="Next" className="text-black hover:opacity-60 transition-opacity">
-            <ChevronRight size={22} strokeWidth={1.6} />
-          </button>
-        </div>
-      </section>
-
-      {/* ───────── EDITORIAL BANNER ───────── */}
-      <section className="relative w-full">
-        <div className="relative w-full aspect-[16/9] md:aspect-[2.4/1] min-h-[420px] md:min-h-[560px] overflow-hidden bg-[#1a1410]">
-          <Image
-            src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=2400&q=95"
-            alt={t.atelierTitle}
-            fill
-            sizes="100vw"
-            className="object-cover object-center"
-          />
-        </div>
-        <div className="px-6 md:px-10 pt-8 pb-2 flex items-baseline justify-between flex-wrap gap-3">
-          <h2 className="text-[15px] md:text-[16px] font-bold tracking-[0.2em] uppercase">
-            {t.atelierTitle}
-          </h2>
-          <Link
-            href="/hakkimizda"
-            className="text-[12px] tracking-[0.2em] font-semibold uppercase border-b border-black pb-1 hover:opacity-60 transition-opacity"
-          >
-            {t.atelierCta}
-          </Link>
-        </div>
-      </section>
-
-      {/* ───────── CATEGORIES ───────── */}
-      <section className="px-6 md:px-10 pt-24 md:pt-32 pb-24 md:pb-32">
-        <h2 className="text-[15px] font-bold tracking-[0.2em] uppercase mb-10 md:mb-14">
-          {t.categoriesHeading}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
-          {t.cats.map((cat) => (
-            <Link key={cat.slug} href={cat.href} className="group block">
-              <div className="relative aspect-[4/5] bg-[#efece6] overflow-hidden">
+      ) : (
+        <div className="uy-shop-track" ref={trackRef}>
+          {items.map((p, i) => (
+            <Link key={p.id} href={`/urunler/${p.id}`} className="uy-card">
+              <div className="uy-card-img">
                 <Image
-                  src={cat.image}
-                  alt={cat.tr}
+                  src={p.image ?? FALLBACK_IMG}
+                  alt={p.name}
                   fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover group-hover:scale-[1.02] transition-transform duration-700 ease-out"
+                  draggable={false}
+                  sizes="(max-width: 980px) 75vw, 25vw"
+                  style={{ objectFit: "cover", pointerEvents: "none" }}
                 />
+                <span className="uy-card-num">{String(i + 1).padStart(2, "0")}</span>
               </div>
-              <div className="mt-5 flex items-baseline justify-between">
-                <p className="text-[13px] font-bold tracking-[0.18em] uppercase">
-                  {cat.tr}
-                </p>
-                <p className="text-[11px] tracking-[0.2em] uppercase text-black/50 group-hover:text-black transition-colors">
-                  {cat.cta} →
-                </p>
+              <div className="uy-card-meta">
+                <span className="uy-card-name">{p.name}</span>
+                <span className="uy-card-price">₺{p.price.toLocaleString("tr-TR")}</span>
               </div>
             </Link>
           ))}
         </div>
-      </section>
-
-      {/* ───────── BESTSELLERS DEEP LINK ───────── */}
-      {bestsellers.length > 0 && (
-        <section className="px-6 md:px-10 pb-24 md:pb-32">
-          <div className="flex items-baseline justify-between mb-6">
-            <h2 className="text-[15px] font-bold tracking-[0.2em] uppercase">
-              {t.bestsellers}
-            </h2>
-            <Link
-              href="/sandaletler"
-              className="text-[11px] tracking-[0.2em] uppercase font-semibold border-b border-black pb-0.5 hover:opacity-60 transition-opacity"
-            >
-              {t.shopAll}
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-5">
-            {bestsellers.map((p) => (
-              <Link key={p.id} href={`/urunler/${p.id}`} className="group block">
-                <div className="relative aspect-square bg-[#f3f1ed] overflow-hidden">
-                  {p.image && (
-                    <Image
-                      src={p.image}
-                      alt={p.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 20vw"
-                      className="object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
-                    />
-                  )}
-                </div>
-                <div className="mt-4">
-                  <p className="text-[12px] font-bold tracking-[0.15em] uppercase">
-                    {p.name}
-                  </p>
-                  <p className="text-[12px] mt-1 text-black/80">
-                    ₺{p.price.toLocaleString("tr-TR")}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
       )}
+    </section>
+  );
+}
 
-      {/* ───────── JOURNAL + NEWSLETTER ───────── */}
-      <section className="px-6 md:px-10 pb-24 md:pb-32">
-        <div className="border-t border-black/10 pt-20 md:pt-28 grid md:grid-cols-2 gap-12 md:gap-20">
-          <div>
-            <h2 className="text-[15px] font-bold tracking-[0.2em] uppercase mb-6">
-              {t.journalHeading}
-            </h2>
-            <p className="text-[15px] leading-[1.9] text-black/85 max-w-md">
-              {t.journalBody}
-            </p>
-            <Link
-              href="/hakkimizda"
-              className="inline-block mt-8 text-[12px] tracking-[0.2em] uppercase font-semibold border-b border-black pb-1 hover:opacity-60 transition-opacity"
-            >
-              {t.journalCta}
-            </Link>
-          </div>
-          <div>
-            <h2 className="text-[15px] font-bold tracking-[0.2em] uppercase mb-6">
-              {t.newsletterHeading}
-            </h2>
-            <p className="text-[15px] leading-[1.9] text-black/85 max-w-md mb-8">
-              {t.newsletterBody}
-            </p>
-            <form className="flex border-b border-black max-w-md">
-              <input
-                type="email"
-                placeholder={t.emailPh}
-                className="flex-1 bg-transparent text-[14px] placeholder:text-black/40 px-1 py-3 outline-none"
+// ── ATELIER ───────────────────────────────────────────────────────────────
+function Atelier() {
+  const stepsRef = useRef<HTMLDivElement | null>(null);
+  const [active, setActive] = useState(0);
+  const steps = [
+    {
+      n: "01",
+      t: "DERİ SEÇİMİ",
+      b:
+        "Sertifikalı tabakhanelerden gelen sebze tabaklı dana derisi. Her parça elle inceleniyor; doku, esneklik, renk uyumu için.",
+      img: CRAFT_IMGS[0],
+    },
+    {
+      n: "02",
+      t: "KESİM & ŞABLON",
+      b: "Heykelsi siluet, milimetrik şablonlarla başlıyor. Bir usta her gün yalnızca on çift kesebilir.",
+      img: CRAFT_IMGS[1],
+    },
+    {
+      n: "03",
+      t: "EL DİKİŞİ",
+      b: "Saten dikiş ve elle çakılan tabanlar — ayağa zamanla şekil veren, yumuşayan bir his. Manisa'da, üç ustanın imzasıyla.",
+      img: CRAFT_IMGS[2],
+    },
+  ];
+
+  useEffect(() => {
+    const onScroll = () => {
+      const el = stepsRef.current;
+      if (!el) return;
+      const children = Array.from(el.querySelectorAll<HTMLDivElement>("[data-step]"));
+      const mid = window.innerHeight * 0.5;
+      let idx = 0;
+      children.forEach((c, i) => {
+        const r = c.getBoundingClientRect();
+        if (r.top <= mid) idx = i;
+      });
+      setActive(idx);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <section className="uy-atelier">
+      <div className="uy-atelier-rail">
+        <div className="uy-atelier-sticky">
+          <div className="uy-atelier-img-wrap">
+            {steps.map((s, i) => (
+              <Image
+                key={s.n}
+                src={s.img}
+                alt={s.t}
+                fill
+                sizes="50vw"
+                className={`uy-atelier-img ${i === active ? "is-active" : ""}`}
+                style={{ objectFit: "cover" }}
               />
-              <button
-                type="submit"
-                className="text-[12px] tracking-[0.2em] uppercase font-semibold px-3 py-3 hover:opacity-60 transition-opacity"
-              >
-                {t.subscribe}
-              </button>
-            </form>
+            ))}
+            <div className="uy-atelier-badge">
+              <span className="uy-eyebrow">ATÖLYE</span>
+              <span className="uy-display-sm">Manisa, Türkiye</span>
+              <span className="uy-tag-line">41° kuzey · 27° doğu</span>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
+
+      <div className="uy-atelier-steps" ref={stepsRef}>
+        <Reveal>
+          <span className="uy-eyebrow">— YAPIM SÜRECİ</span>
+          <h2 className="uy-display">Üç usta, üç adım, bir çift.</h2>
+        </Reveal>
+        {steps.map((s, i) => (
+          <div key={s.n} className={`uy-atelier-step ${i === active ? "is-active" : ""}`} data-step>
+            <span className="uy-step-num">{s.n}</span>
+            <h3>{s.t}</h3>
+            <p>{s.b}</p>
+          </div>
+        ))}
+        <Reveal delay={0.05}>
+          <Link href="/hakkimizda" className="uy-cta uy-cta-dark">
+            ATÖLYEYİ KEŞFET
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </Link>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ── CATEGORIES ────────────────────────────────────────────────────────────
+function Categories() {
+  const cats = [
+    { t: "TÜM SANDALETLER", sub: "01 — Koleksiyon", img: CAT_IMGS[0], cta: "Tümünü İncele", href: "/sandaletler" },
+    { t: "YENİ GELENLER", sub: "02 — SS26", img: CAT_IMGS[1], cta: "Yeni Sezon", href: "/sandaletler?yeni=1" },
+    { t: "İNDİRİM", sub: "03 — Sezon Sonu", img: CAT_IMGS[2], cta: "Fırsatları Gör", href: "/sandaletler?indirim=1" },
+  ];
+  return (
+    <section className="uy-cats" id="sandaletler">
+      <Reveal className="uy-cats-head">
+        <span className="uy-eyebrow">— KOLEKSİYONU KEŞFET</span>
+        <h2 className="uy-display">Üç giriş, bir koleksiyon.</h2>
+      </Reveal>
+      <div className="uy-cats-grid">
+        {cats.map((c, i) => (
+          <Reveal key={c.t} delay={i * 0.08}>
+            <Link href={c.href} className="uy-cat">
+              <div className="uy-cat-img">
+                <Image src={c.img} alt={c.t} fill sizes="(max-width: 980px) 100vw, 33vw" style={{ objectFit: "cover" }} />
+              </div>
+              <div className="uy-cat-meta">
+                <div>
+                  <span className="uy-cat-sub">{c.sub}</span>
+                  <span className="uy-cat-name">{c.t}</span>
+                </div>
+                <span className="uy-cat-cta">{c.cta} →</span>
+              </div>
+            </Link>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── TESTIMONIALS ──────────────────────────────────────────────────────────
+function Testimonials() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % TESTIMONIALS.length), 5500);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <section className="uy-testimonials">
+      <Reveal>
+        <span className="uy-eyebrow">— MÜŞTERİLERİMİZ</span>
+      </Reveal>
+      <div className="uy-quote-stage">
+        {TESTIMONIALS.map((t, i) => (
+          <blockquote key={i} className={`uy-quote ${i === idx ? "is-active" : ""}`}>
+            <p className="uy-display">
+              <span className="uy-mark-q">“</span>
+              {t.quote}
+              <span className="uy-mark-q">”</span>
+            </p>
+            <footer>
+              <span>{t.author}</span>
+              <span className="uy-sep">—</span>
+              <span>{t.city}</span>
+            </footer>
+          </blockquote>
+        ))}
+      </div>
+      <div className="uy-quote-dots">
+        {TESTIMONIALS.map((_, i) => (
+          <button
+            key={i}
+            className={i === idx ? "is-active" : ""}
+            onClick={() => setIdx(i)}
+            aria-label={`Yorum ${i + 1}`}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── JOURNAL + NEWSLETTER ──────────────────────────────────────────────────
+function JournalAndNewsletter() {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  return (
+    <section className="uy-foot-feature">
+      <Reveal className="uy-feat journal">
+        <span className="uy-eyebrow">— GÜNCE</span>
+        <h3 className="uy-display">Atölyeden notlar, sezon arasında.</h3>
+        <p>
+          Sezon kampanyaları, sınırlı sayıda üretilen parçalar ve atölye günlükleri için listemize
+          katılın.
+        </p>
+        <Link href="/hakkimizda" className="uy-cta">
+          DEVAMINI OKU →
+        </Link>
+      </Reveal>
+      <Reveal delay={0.1} className="uy-feat newsletter">
+        <span className="uy-eyebrow">— BÜLTEN</span>
+        <h3 className="uy-display">Yeni siluetlere ilk siz erişin.</h3>
+        <form
+          className="uy-news-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSent(true);
+          }}
+        >
+          <input
+            type="email"
+            placeholder={sent ? "Listemize katıldınız ✓" : "E-posta adresiniz"}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={sent}
+            required
+          />
+          <button type="submit" disabled={sent}>
+            {sent ? "GÖNDERİLDİ" : "ABONE OL"}
+          </button>
+        </form>
+        <span className="uy-fineprint">
+          Üye olarak <Link href="/gizlilik" style={{ textDecoration: "underline" }}>Gizlilik Politikamızı</Link> kabul etmiş olursunuz.
+        </span>
+      </Reveal>
+    </section>
+  );
+}
+
+// ── ROOT ──────────────────────────────────────────────────────────────────
+export default function HomeClient({ newArrivals, bestsellers }: Props) {
+  return (
+    <div className="uy-root">
+      <Hero />
+      <Marquee />
+      <About />
+      <ProductGrid bestsellers={bestsellers} newArrivals={newArrivals} />
+      <Atelier />
+      <Categories />
+      <Testimonials />
+      <JournalAndNewsletter />
     </div>
   );
 }
