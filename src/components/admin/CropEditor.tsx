@@ -149,9 +149,13 @@ export default function CropEditor({ url, onApply, onClose }: Props) {
     }
     setWorking(true);
     try {
-      // Origin'den blob'u indir (CORS taint problemi olmasin diye fetch).
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`Görsel indirilemedi (${resp.status})`);
+      // CORS olmayan kaynaklardan blob okumak imkansiz; her zaman server proxy uzerinden.
+      const proxied = `/api/admin/proxy-image?url=${encodeURIComponent(url)}`;
+      const resp = await fetch(proxied);
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || `Görsel indirilemedi (HTTP ${resp.status})`);
+      }
       const blob = await resp.blob();
       const objectUrl = URL.createObjectURL(blob);
 
