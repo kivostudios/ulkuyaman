@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { parseImageMeta } from "@/lib/image-meta";
 import AddToCart from "./AddToCart";
 
 export const dynamic = "force-dynamic";
@@ -47,12 +48,16 @@ export default async function ProductPage({ params }: Props) {
       <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
         {/* Görseller */}
         <div className="grid grid-cols-2 gap-2">
-          {product.images.length > 0 ? product.images.map((img, i) => (
-            <div key={i} className={`relative bg-gray-100 ${i === 0 ? "col-span-2 aspect-[4/3]" : "aspect-square"}`}>
-              <Image src={img} alt={`${product.name} - ${i + 1}`} fill className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw" priority={i === 0} unoptimized />
-            </div>
-          )) : (
+          {product.images.length > 0 ? product.images.map((img, i) => {
+            const m = parseImageMeta(img);
+            return (
+              <div key={i} className={`relative bg-gray-100 ${i === 0 ? "col-span-2 aspect-[4/3]" : "aspect-square"}`}>
+                <Image src={m.url} alt={`${product.name} - ${i + 1}`} fill className="object-cover"
+                  style={{ objectPosition: m.position }}
+                  sizes="(max-width: 768px) 100vw, 50vw" priority={i === 0} unoptimized />
+              </div>
+            );
+          }) : (
             <div className="col-span-2 aspect-[4/3] bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
               Görsel yok
             </div>
@@ -107,7 +112,10 @@ export default async function ProductPage({ params }: Props) {
             {related.map((p) => (
               <Link key={p.id} href={`/urunler/${p.id}`} className="group">
                 <div className="aspect-[3/4] bg-gray-100 relative mb-3 overflow-hidden">
-                  {p.images[0] && <Image src={p.images[0]} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="25vw" unoptimized />}
+                  {p.images[0] && (() => {
+                    const m = parseImageMeta(p.images[0]);
+                    return <Image src={m.url} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" style={{ objectPosition: m.position }} sizes="25vw" unoptimized />;
+                  })()}
                 </div>
                 <p className="text-sm font-medium">{p.name}</p>
                 <p className="text-sm text-gray-500 mt-0.5">₺{p.price.toLocaleString("tr-TR")}</p>

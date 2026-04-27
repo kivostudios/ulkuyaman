@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useState } from "react";
+import { parseImageMeta } from "@/lib/image-meta";
 
 type CardProduct = {
   id: string;
@@ -20,18 +21,20 @@ export default function ProductCard({ product }: { product: CardProduct }) {
   const [wished, setWished] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
   const [errored, setErrored] = useState(false);
-  const src = product.images[imgIdx] || product.images[0];
-  const showImage = src && !errored;
+  const raw = product.images[imgIdx] || product.images[0];
+  const meta = raw ? parseImageMeta(raw) : null;
+  const showImage = meta && !errored;
 
   return (
     <Link href={`/urunler/${product.id}`} className="group block">
       <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden">
         {showImage ? (
           <Image
-            src={src}
+            src={meta.url}
             alt={product.name}
             fill
             className="object-cover"
+            style={{ objectPosition: meta.position }}
             sizes="(max-width: 768px) 50vw, 25vw"
             onMouseEnter={() => product.images[1] && setImgIdx(1)}
             onMouseLeave={() => setImgIdx(0)}
