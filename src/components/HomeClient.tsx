@@ -206,6 +206,43 @@ function About() {
 }
 
 // ── PRODUCT GRID ──────────────────────────────────────────────────────────
+function ProductCardItem({ product, index, fallback }: { product: CardProduct; index: number; fallback: string }) {
+  const [errored, setErrored] = useState(false);
+  const src = product.image && !errored ? product.image : null;
+  return (
+    <Link href={`/urunler/${product.id}`} className="uy-card">
+      <div className="uy-card-img">
+        {src ? (
+          <Image
+            src={src}
+            alt={product.name}
+            fill
+            draggable={false}
+            sizes="(max-width: 980px) 75vw, 25vw"
+            style={{ objectFit: "cover", pointerEvents: "none" }}
+            onError={() => setErrored(true)}
+            unoptimized
+          />
+        ) : (
+          <Image
+            src={fallback}
+            alt={product.name}
+            fill
+            draggable={false}
+            sizes="(max-width: 980px) 75vw, 25vw"
+            style={{ objectFit: "cover", pointerEvents: "none", opacity: 0.5 }}
+          />
+        )}
+        <span className="uy-card-num">{String(index + 1).padStart(2, "0")}</span>
+      </div>
+      <div className="uy-card-meta">
+        <span className="uy-card-name">{product.name}</span>
+        <span className="uy-card-price">₺{product.price.toLocaleString("tr-TR")}</span>
+      </div>
+    </Link>
+  );
+}
+
 function ProductGrid({ bestsellers, newArrivals }: { bestsellers: CardProduct[]; newArrivals: CardProduct[] }) {
   const [tab, setTab] = useState<"best" | "new">("best");
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -286,24 +323,7 @@ function ProductGrid({ bestsellers, newArrivals }: { bestsellers: CardProduct[];
       ) : (
         <div className="uy-shop-track" ref={trackRef}>
           {items.map((p, i) => (
-            <Link key={p.id} href={`/urunler/${p.id}`} className="uy-card">
-              <div className="uy-card-img">
-                <Image
-                  src={p.image ?? FALLBACK_IMG}
-                  alt={p.name}
-                  fill
-                  draggable={false}
-                  sizes="(max-width: 980px) 75vw, 25vw"
-                  style={{ objectFit: "cover", pointerEvents: "none" }}
-                  unoptimized
-                />
-                <span className="uy-card-num">{String(i + 1).padStart(2, "0")}</span>
-              </div>
-              <div className="uy-card-meta">
-                <span className="uy-card-name">{p.name}</span>
-                <span className="uy-card-price">₺{p.price.toLocaleString("tr-TR")}</span>
-              </div>
-            </Link>
+            <ProductCardItem key={p.id} product={p} index={i} fallback={FALLBACK_IMG} />
           ))}
         </div>
       )}

@@ -19,23 +19,30 @@ type CardProduct = {
 export default function ProductCard({ product }: { product: CardProduct }) {
   const [wished, setWished] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
+  const [errored, setErrored] = useState(false);
+  const src = product.images[imgIdx] || product.images[0];
+  const showImage = src && !errored;
 
   return (
     <Link href={`/urunler/${product.id}`} className="group block">
       <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden">
-        {product.images[0] ? (
+        {showImage ? (
           <Image
-            src={product.images[imgIdx] || product.images[0]}
+            src={src}
             alt={product.name}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 50vw, 25vw"
             onMouseEnter={() => product.images[1] && setImgIdx(1)}
             onMouseLeave={() => setImgIdx(0)}
+            onError={() => setErrored(true)}
             unoptimized
           />
         ) : (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300 text-xs">Görsel yok</div>
+          <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center text-stone-400 text-xs gap-2 p-4 text-center">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+            <span className="tracking-wider uppercase">Yakında</span>
+          </div>
         )}
 
         {/* Badges */}
