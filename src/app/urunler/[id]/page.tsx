@@ -50,7 +50,7 @@ export default async function ProductPage({ params }: Props) {
           {product.images.length > 0 ? product.images.map((img, i) => (
             <div key={i} className={`relative bg-gray-100 ${i === 0 ? "col-span-2 aspect-[4/3]" : "aspect-square"}`}>
               <Image src={img} alt={`${product.name} - ${i + 1}`} fill className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw" priority={i === 0} />
+                sizes="(max-width: 768px) 100vw, 50vw" priority={i === 0} unoptimized />
             </div>
           )) : (
             <div className="col-span-2 aspect-[4/3] bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
@@ -107,7 +107,7 @@ export default async function ProductPage({ params }: Props) {
             {related.map((p) => (
               <Link key={p.id} href={`/urunler/${p.id}`} className="group">
                 <div className="aspect-[3/4] bg-gray-100 relative mb-3 overflow-hidden">
-                  {p.images[0] && <Image src={p.images[0]} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="25vw" />}
+                  {p.images[0] && <Image src={p.images[0]} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="25vw" unoptimized />}
                 </div>
                 <p className="text-sm font-medium">{p.name}</p>
                 <p className="text-sm text-gray-500 mt-0.5">₺{p.price.toLocaleString("tr-TR")}</p>

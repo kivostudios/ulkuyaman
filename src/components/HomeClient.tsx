@@ -295,6 +295,7 @@ function ProductGrid({ bestsellers, newArrivals }: { bestsellers: CardProduct[];
                   draggable={false}
                   sizes="(max-width: 980px) 75vw, 25vw"
                   style={{ objectFit: "cover", pointerEvents: "none" }}
+                  unoptimized
                 />
                 <span className="uy-card-num">{String(i + 1).padStart(2, "0")}</span>
               </div>

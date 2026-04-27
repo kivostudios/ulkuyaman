@@ -32,6 +32,7 @@ export default function ProductCard({ product }: { product: CardProduct }) {
             sizes="(max-width: 768px) 50vw, 25vw"
             onMouseEnter={() => product.images[1] && setImgIdx(1)}
             onMouseLeave={() => setImgIdx(0)}
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300 text-xs">Görsel yok</div>
