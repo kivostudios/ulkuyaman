@@ -253,7 +253,6 @@ export default function CropEditor({ url, onApply, onClose }: Props) {
               src={url}
               alt=""
               className="max-w-full max-h-[calc(95vh-200px)] object-contain"
-              crossOrigin="anonymous"
               draggable={false}
               onLoad={(e) => {
                 const i = e.currentTarget;
@@ -263,6 +262,7 @@ export default function CropEditor({ url, onApply, onClose }: Props) {
                   setCrop((c) => fitAspect(c, aspect, stageRef.current!));
                 }
               }}
+              onError={() => setErr("Görsel yüklenemedi (kaynak erişim hatası).")}
             />
             {imgLoaded && (
               <>
