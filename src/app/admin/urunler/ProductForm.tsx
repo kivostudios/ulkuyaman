@@ -1,8 +1,8 @@
 "use client";
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { X, Upload, Loader2, Plus } from "lucide-react";
+import { X, Upload, Loader2, Plus, Star, ArrowUp, ArrowDown, Maximize2 } from "lucide-react";
 
 type Variant = { color: string; size: string; stock: number };
 
@@ -15,6 +15,61 @@ type ProductData = {
 const COLORS = ["Siyah", "Beyaz", "Kahverengi", "Bej", "Lacivert", "Kırmızı", "Gri", "Tan", "Nude"];
 const CATEGORIES = ["Topuklu", "Düz", "Bot", "Sandalet", "Sneaker", "Loafer", "Terlik", "Diğer"];
 const DEFAULT_SIZES = ["36", "37", "38", "39", "40", "41"];
+const POSITIONS: { value: string; label: string }[] = [
+  { value: "center", label: "Ortalı (varsayılan)" },
+  { value: "top", label: "Üstten kırp" },
+  { value: "bottom", label: "Alttan kırp" },
+  { value: "left", label: "Soldan kırp" },
+  { value: "right", label: "Sağdan kırp" },
+];
+
+// URL'in hash'inde "#pos=top" gibi metadata sakliyoruz; browser hash'i istek'e dahil etmez.
+function splitImageUrl(url: string) {
+  const i = url.indexOf("#");
+  if (i === -1) return { url, position: "center" };
+  const bare = url.slice(0, i);
+  const params = new URLSearchParams(url.slice(i + 1));
+  return { url: bare, position: params.get("pos") || "center" };
+}
+function joinImageUrl(bareUrl: string, position: string) {
+  if (!position || position === "center") return bareUrl;
+  return `${bareUrl}#pos=${position}`;
+}
+
+// Tarayici tarafinda fotoyu max 2000px genislik + 80% kalite ile yeniden boyutlandir.
+// Vercel function body limiti ~4.5MB, 8MP foto kolay 6MB+ oluyor; bu ile altina iniyor.
+async function compressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+  const MAX_W = 2000;
+  const QUALITY = 0.82;
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new window.Image();
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = URL.createObjectURL(file);
+  });
+
+  if (img.width <= MAX_W && file.size < 3 * 1024 * 1024) return file;
+
+  const scale = Math.min(1, MAX_W / img.width);
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", QUALITY)
+  );
+  if (!blob) return file;
+
+  return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+}
 
 type Props = {
   initialData?: Partial<ProductData>;
@@ -26,6 +81,8 @@ export default function ProductForm({ initialData, productId }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
 
   const [form, setForm] = useState<ProductData>({
     name: initialData?.name || "",
@@ -39,20 +96,32 @@ export default function ProductForm({ initialData, productId }: Props) {
     variants: initialData?.variants || [],
   });
 
-  const update = (k: keyof ProductData, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
+  const update = <K extends keyof ProductData>(k: K, v: ProductData[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
 
   const handleImages = async (files: FileList) => {
     setUploading(true);
+    setUploadError(null);
     try {
-      for (const file of Array.from(files)) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-        const data = await res.json();
-        if (data.url) update("images", [...form.images, data.url]);
+      for (const original of Array.from(files)) {
+        try {
+          const file = await compressImage(original);
+          const fd = new FormData();
+          fd.append("file", file);
+          const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.url) {
+            throw new Error(data.error || `HTTP ${res.status}`);
+          }
+          // Functional setState — closure'da eski form.images'i kullanmıyoruz
+          setForm((f) => ({ ...f, images: [...f.images, data.url as string] }));
+        } catch (e) {
+          setUploadError(`${original.name}: ${(e as Error).message}`);
+        }
       }
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -60,7 +129,19 @@ export default function ProductForm({ initialData, productId }: Props) {
     update("colors", form.colors.includes(s) ? form.colors.filter((x) => x !== s) : [...form.colors, s]);
   };
 
-  const removeImage = (url: string) => update("images", form.images.filter((i) => i !== url));
+  const moveImage = (from: number, to: number) => {
+    if (to < 0 || to >= form.images.length) return;
+    const next = [...form.images];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    update("images", next);
+  };
+  const setPrimary = (i: number) => moveImage(i, 0);
+  const removeImageAt = (i: number) => update("images", form.images.filter((_, idx) => idx !== i));
+  const setPositionAt = (i: number, pos: string) => {
+    const { url } = splitImageUrl(form.images[i]);
+    update("images", form.images.map((x, idx) => (idx === i ? joinImageUrl(url, pos) : x)));
+  };
 
   const generateVariantMatrix = () => {
     if (!form.colors.length) {
@@ -105,11 +186,22 @@ export default function ProductForm({ initialData, productId }: Props) {
         }
       );
       if (res.ok) router.push("/admin/urunler");
-      else alert("Hata oluştu");
+      else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || `Kaydedilemedi (HTTP ${res.status})`);
+      }
     } finally {
       setSaving(false);
     }
   };
+
+  // ESC ile preview kapat
+  useEffect(() => {
+    if (previewIdx === null) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPreviewIdx(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [previewIdx]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -183,7 +275,7 @@ export default function ProductForm({ initialData, productId }: Props) {
             </div>
 
             {form.variants.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">Henüz varyant yok. Yukarıdaki "matris oluştur" butonu hızlı başlatır.</p>
+              <p className="text-xs text-gray-400 italic">Henüz varyant yok. Yukarıdaki &quot;matris oluştur&quot; butonu hızlı başlatır.</p>
             ) : (
               <div className="space-y-1.5">
                 <div className="grid grid-cols-[1fr_120px_120px_36px] gap-2 text-[10px] uppercase tracking-wider text-gray-400 px-1">
@@ -228,34 +320,144 @@ export default function ProductForm({ initialData, productId }: Props) {
             )}
           </div>
 
-          {/* Images */}
+          {/* Images — yenilenmiş galeri */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <h2 className="text-sm font-semibold mb-3">Görseller</h2>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {form.images.map((url) => (
-                <div key={url} className="relative group">
-                  <Image src={url} alt="" width={80} height={80} className="w-20 h-20 object-cover rounded-lg border border-gray-200" />
-                  <button
-                    type="button" onClick={() => removeImage(url)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X size={10} />
-                  </button>
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-sm font-semibold">Görseller</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  İlk görsel ana görsel olarak kullanılır. ★ butonuyla başka birini ana yap.
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="w-20 h-20 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 transition-colors"
+                className="text-xs flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-900 disabled:opacity-50"
               >
-                {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                <span className="text-[10px] mt-1">{uploading ? "Yükleniyor" : "Ekle"}</span>
+                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {uploading ? "Yükleniyor…" : "Foto Ekle"}
               </button>
             </div>
-            <input ref={fileRef} type="file" multiple accept="image/*" className="hidden"
-              onChange={(e) => e.target.files && handleImages(e.target.files)} />
-            <p className="text-xs text-gray-400">JPG, PNG, WEBP. İlk görsel ana görsel olarak kullanılır.</p>
+
+            {uploadError && (
+              <div className="mb-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                Yükleme hatası: {uploadError}
+              </div>
+            )}
+
+            {form.images.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-200 rounded-lg py-12 flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:bg-gray-50 transition-colors"
+              >
+                <Upload size={20} />
+                <span className="text-xs mt-2">JPG, PNG, WEBP — max 8MB (otomatik küçültülür)</span>
+              </button>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {form.images.map((raw, i) => {
+                  const { url, position } = splitImageUrl(raw);
+                  const isPrimary = i === 0;
+                  return (
+                    <div
+                      key={raw + i}
+                      className={`group relative border rounded-lg overflow-hidden ${
+                        isPrimary ? "border-black ring-2 ring-black/5" : "border-gray-200"
+                      }`}
+                    >
+                      <div
+                        className="relative aspect-[3/4] bg-gray-50 cursor-zoom-in"
+                        onClick={() => setPreviewIdx(i)}
+                      >
+                        <Image
+                          src={url}
+                          alt={`Foto ${i + 1}`}
+                          fill
+                          className="object-cover"
+                          style={{ objectPosition: position }}
+                          sizes="200px"
+                          unoptimized
+                        />
+                        {isPrimary && (
+                          <span className="absolute top-2 left-2 text-[10px] tracking-widest uppercase bg-black text-white px-2 py-0.5 rounded">
+                            Ana
+                          </span>
+                        )}
+                        <span className="absolute top-2 right-2 text-[10px] bg-white/90 px-1.5 py-0.5 rounded text-gray-600">
+                          {i + 1}/{form.images.length}
+                        </span>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <Maximize2 size={20} className="text-white drop-shadow" />
+                        </div>
+                      </div>
+
+                      <div className="p-2 space-y-1.5 bg-white">
+                        <select
+                          value={position}
+                          onChange={(e) => setPositionAt(i, e.target.value)}
+                          className="w-full text-[11px] border border-gray-200 rounded px-1.5 py-1"
+                          title="Foto kırpma pozisyonu"
+                        >
+                          {POSITIONS.map((p) => (
+                            <option key={p.value} value={p.value}>{p.label}</option>
+                          ))}
+                        </select>
+                        <div className="flex gap-1">
+                          <button
+                            type="button" onClick={() => setPrimary(i)}
+                            disabled={isPrimary}
+                            className="flex-1 text-[11px] border border-gray-200 rounded px-1.5 py-1 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                            title="Ana foto yap"
+                          >
+                            <Star size={11} className={isPrimary ? "fill-black" : ""} />
+                          </button>
+                          <button
+                            type="button" onClick={() => moveImage(i, i - 1)}
+                            disabled={i === 0}
+                            className="text-[11px] border border-gray-200 rounded px-1.5 py-1 hover:bg-gray-50 disabled:opacity-40"
+                            title="Yukarı taşı"
+                          >
+                            <ArrowUp size={11} />
+                          </button>
+                          <button
+                            type="button" onClick={() => moveImage(i, i + 1)}
+                            disabled={i === form.images.length - 1}
+                            className="text-[11px] border border-gray-200 rounded px-1.5 py-1 hover:bg-gray-50 disabled:opacity-40"
+                            title="Aşağı taşı"
+                          >
+                            <ArrowDown size={11} />
+                          </button>
+                          <button
+                            type="button" onClick={() => removeImageAt(i)}
+                            className="text-[11px] border border-red-200 text-red-600 rounded px-1.5 py-1 hover:bg-red-50"
+                            title="Sil"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="aspect-[3/4] border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 size={20} className="animate-spin" /> : <Plus size={20} />}
+                  <span className="text-[11px] mt-1">{uploading ? "Yükleniyor" : "Foto ekle"}</span>
+                </button>
+              </div>
+            )}
+
+            <input
+              ref={fileRef} type="file" multiple accept="image/*" className="hidden"
+              onChange={(e) => e.target.files && e.target.files.length && handleImages(e.target.files)}
+            />
           </div>
         </div>
 
@@ -318,6 +520,39 @@ export default function ProductForm({ initialData, productId }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Preview modal — büyük göster */}
+      {previewIdx !== null && form.images[previewIdx] && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-6"
+          onClick={() => setPreviewIdx(null)}
+        >
+          <div
+            className="relative max-w-[min(900px,90vw)] max-h-[85vh] w-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={splitImageUrl(form.images[previewIdx]).url}
+              alt={`Önizleme ${previewIdx + 1}`}
+              width={900}
+              height={1200}
+              className="max-h-[85vh] w-auto h-auto object-contain"
+              style={{ objectPosition: splitImageUrl(form.images[previewIdx]).position }}
+              unoptimized
+            />
+            <button
+              type="button" onClick={() => setPreviewIdx(null)}
+              className="absolute -top-3 -right-3 w-8 h-8 bg-white text-black rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100"
+              aria-label="Kapat"
+            >
+              <X size={16} />
+            </button>
+            <div className="text-white text-xs text-center mt-3 opacity-70">
+              Foto {previewIdx + 1} / {form.images.length} — ESC veya dışarı tıkla kapanır
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

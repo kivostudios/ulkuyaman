@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { parseImageMeta } from "@/lib/image-meta";
 
 type CardProduct = {
   id: string;
@@ -208,18 +209,18 @@ function About() {
 // ── PRODUCT GRID ──────────────────────────────────────────────────────────
 function ProductCardItem({ product, index, fallback }: { product: CardProduct; index: number; fallback: string }) {
   const [errored, setErrored] = useState(false);
-  const src = product.image && !errored ? product.image : null;
+  const meta = product.image && !errored ? parseImageMeta(product.image) : null;
   return (
     <Link href={`/urunler/${product.id}`} className="uy-card">
       <div className="uy-card-img">
-        {src ? (
+        {meta ? (
           <Image
-            src={src}
+            src={meta.url}
             alt={product.name}
             fill
             draggable={false}
             sizes="(max-width: 980px) 75vw, 25vw"
-            style={{ objectFit: "cover", pointerEvents: "none" }}
+            style={{ objectFit: "cover", objectPosition: meta.position, pointerEvents: "none" }}
             onError={() => setErrored(true)}
             unoptimized
           />
