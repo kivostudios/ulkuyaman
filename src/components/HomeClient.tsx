@@ -5,6 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { parseImageMeta } from "@/lib/image-meta";
+import { useT } from "@/lib/i18n";
 
 type CardProduct = {
   id: string;
@@ -104,6 +105,7 @@ function Reveal({
 
 // ── HERO ──────────────────────────────────────────────────────────────────
 function Hero() {
+  const { t } = useT();
   return (
     <section className="uy-hero">
       <div className="uy-hero-img">
@@ -119,24 +121,24 @@ function Hero() {
 
       <div className="uy-hero-eyebrow">
         <span className="uy-dot" />
-        <span>BAHAR / YAZ 2026</span>
+        <span>{t.seasonEyebrow}</span>
       </div>
 
       <div className="uy-hero-headline">
         <h1>
-          <span className="line">Heykelsi siluetler,</span>
-          <span className="line italic">gündelik bir dilde.</span>
+          <span className="line">{t.heroLine1}</span>
+          <span className="line italic">{t.heroLine2}</span>
         </h1>
       </div>
 
       <div className="uy-hero-foot">
         <div className="uy-hero-meta">
-          <span>EL YAPIMI · MANİSA</span>
+          <span>{t.heroMeta}</span>
           <span className="uy-sep">—</span>
-          <span>SERTİFİKALI HAKİKİ DERİ</span>
+          <span>{t.heroMetaSep}</span>
         </div>
         <Link href="/sandaletler?yeni=1" className="uy-cta">
-          KOLEKSİYONU GÖR
+          {t.heroCta}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
@@ -176,18 +178,15 @@ function Marquee() {
 
 // ── ABOUT ─────────────────────────────────────────────────────────────────
 function About() {
+  const { t } = useT();
   return (
     <section className="uy-about" id="hikaye">
       <Reveal className="uy-about-text">
-        <span className="uy-eyebrow">— ÜLKÜ YAMAN HAKKINDA</span>
+        <span className="uy-eyebrow">{t.aboutEyebrow}</span>
         <h2 className="uy-display">
-          Gündelik fonksiyonun içinde <em>heykelsi formu</em> arayan ayakkabılar.
+          {t.aboutTitle1} <em>{t.aboutTitleEm}</em> {t.aboutTitle2}
         </h2>
-        <p>
-          Manisa&apos;daki atölyemizde, sertifikalı hakiki deri ile bağımsız ustalar tarafından
-          elle üretilir. Sade, ölçülü, ama ayırt edilebilir bir estetiği savunuyoruz —
-          modern hayatın ritmiyle doğal şekilde hareket eden parçalar.
-        </p>
+        <p>{t.aboutBody}</p>
       </Reveal>
 
       <div className="uy-about-grid">
@@ -245,6 +244,7 @@ function ProductCardItem({ product, index, fallback }: { product: CardProduct; i
 }
 
 function ProductGrid({ bestsellers, newArrivals }: { bestsellers: CardProduct[]; newArrivals: CardProduct[] }) {
+  const { t } = useT();
   const [tab, setTab] = useState<"best" | "new">("best");
   const trackRef = useRef<HTMLDivElement | null>(null);
   const items = tab === "best" ? bestsellers : newArrivals;
@@ -295,20 +295,20 @@ function ProductGrid({ bestsellers, newArrivals }: { bestsellers: CardProduct[];
         <div className="uy-shop-head">
           <div className="uy-tabs">
             <button className={tab === "best" ? "is-active" : ""} onClick={() => setTab("best")}>
-              ÇOK SATANLAR
+              {t.bestsellers}
             </button>
             <button className={tab === "new" ? "is-active" : ""} onClick={() => setTab("new")}>
-              YENİ GELENLER
+              {t.newArrivals}
             </button>
           </div>
           <div className="uy-shop-nudge">
-            <span className="uy-hint">SÜRÜKLE</span>
-            <button onClick={() => nudge(-1)} aria-label="Önceki">
+            <span className="uy-hint">{t.drag}</span>
+            <button onClick={() => nudge(-1)} aria-label={t.prev}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
                 <path d="M19 12H5M11 18l-6-6 6-6" />
               </svg>
             </button>
-            <button onClick={() => nudge(1)} aria-label="Sonraki">
+            <button onClick={() => nudge(1)} aria-label={t.next}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
@@ -319,7 +319,7 @@ function ProductGrid({ bestsellers, newArrivals }: { bestsellers: CardProduct[];
 
       {items.length === 0 ? (
         <div style={{ padding: "0 32px", color: "var(--muted)", fontSize: 14 }}>
-          Bu kategoride şu an gösterilecek ürün yok.
+          {t.noProductsInTab}
         </div>
       ) : (
         <div className="uy-shop-track" ref={trackRef}>
@@ -334,28 +334,13 @@ function ProductGrid({ bestsellers, newArrivals }: { bestsellers: CardProduct[];
 
 // ── ATELIER ───────────────────────────────────────────────────────────────
 function Atelier() {
+  const { t } = useT();
   const stepsRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState(0);
   const steps = [
-    {
-      n: "01",
-      t: "DERİ SEÇİMİ",
-      b:
-        "Sertifikalı tabakhanelerden gelen sebze tabaklı dana derisi. Her parça elle inceleniyor; doku, esneklik, renk uyumu için.",
-      img: CRAFT_IMGS[0],
-    },
-    {
-      n: "02",
-      t: "KESİM & ŞABLON",
-      b: "Heykelsi siluet, milimetrik şablonlarla başlıyor. Bir usta her gün yalnızca on çift kesebilir.",
-      img: CRAFT_IMGS[1],
-    },
-    {
-      n: "03",
-      t: "EL DİKİŞİ",
-      b: "Saten dikiş ve elle çakılan tabanlar — ayağa zamanla şekil veren, yumuşayan bir his. Manisa'da, üç ustanın imzasıyla.",
-      img: CRAFT_IMGS[2],
-    },
+    { n: "01", title: t.atelierStep1Title, body: t.atelierStep1Body, img: CRAFT_IMGS[0] },
+    { n: "02", title: t.atelierStep2Title, body: t.atelierStep2Body, img: CRAFT_IMGS[1] },
+    { n: "03", title: t.atelierStep3Title, body: t.atelierStep3Body, img: CRAFT_IMGS[2] },
   ];
 
   useEffect(() => {
@@ -385,7 +370,7 @@ function Atelier() {
               <Image
                 key={s.n}
                 src={s.img}
-                alt={s.t}
+                alt={s.title}
                 fill
                 sizes="50vw"
                 className={`uy-atelier-img ${i === active ? "is-active" : ""}`}
@@ -393,9 +378,9 @@ function Atelier() {
               />
             ))}
             <div className="uy-atelier-badge">
-              <span className="uy-eyebrow">ATÖLYE</span>
-              <span className="uy-display-sm">Manisa, Türkiye</span>
-              <span className="uy-tag-line">41° kuzey · 27° doğu</span>
+              <span className="uy-eyebrow">{t.atelierBadge}</span>
+              <span className="uy-display-sm">{t.atelierBadgeCity}</span>
+              <span className="uy-tag-line">{t.atelierBadgeCoords}</span>
             </div>
           </div>
         </div>
@@ -403,19 +388,19 @@ function Atelier() {
 
       <div className="uy-atelier-steps" ref={stepsRef}>
         <Reveal>
-          <span className="uy-eyebrow">— YAPIM SÜRECİ</span>
-          <h2 className="uy-display">Üç usta, üç adım, bir çift.</h2>
+          <span className="uy-eyebrow">{t.atelierEyebrow}</span>
+          <h2 className="uy-display">{t.atelierTitle}</h2>
         </Reveal>
         {steps.map((s, i) => (
           <div key={s.n} className={`uy-atelier-step ${i === active ? "is-active" : ""}`} data-step>
             <span className="uy-step-num">{s.n}</span>
-            <h3>{s.t}</h3>
-            <p>{s.b}</p>
+            <h3>{s.title}</h3>
+            <p>{s.body}</p>
           </div>
         ))}
         <Reveal delay={0.05}>
           <Link href="/hakkimizda" className="uy-cta uy-cta-dark">
-            ATÖLYEYİ KEŞFET
+            {t.atelierCta}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
@@ -428,28 +413,29 @@ function Atelier() {
 
 // ── CATEGORIES ────────────────────────────────────────────────────────────
 function Categories() {
+  const { t } = useT();
   const cats = [
-    { t: "TÜM SANDALETLER", sub: "01 — Koleksiyon", img: CAT_IMGS[0], cta: "Tümünü İncele", href: "/sandaletler" },
-    { t: "YENİ GELENLER", sub: "02 — SS26", img: CAT_IMGS[1], cta: "Yeni Sezon", href: "/sandaletler?yeni=1" },
-    { t: "İNDİRİM", sub: "03 — Sezon Sonu", img: CAT_IMGS[2], cta: "Fırsatları Gör", href: "/sandaletler?indirim=1" },
+    { name: t.cat1Name, sub: t.cat1Sub, img: CAT_IMGS[0], cta: t.cat1Cta, href: "/sandaletler" },
+    { name: t.cat2Name, sub: t.cat2Sub, img: CAT_IMGS[1], cta: t.cat2Cta, href: "/sandaletler?yeni=1" },
+    { name: t.cat3Name, sub: t.cat3Sub, img: CAT_IMGS[2], cta: t.cat3Cta, href: "/sandaletler?indirim=1" },
   ];
   return (
     <section className="uy-cats" id="sandaletler">
       <Reveal className="uy-cats-head">
-        <span className="uy-eyebrow">— KOLEKSİYONU KEŞFET</span>
-        <h2 className="uy-display">Üç giriş, bir koleksiyon.</h2>
+        <span className="uy-eyebrow">{t.catsEyebrow}</span>
+        <h2 className="uy-display">{t.catsTitle}</h2>
       </Reveal>
       <div className="uy-cats-grid">
         {cats.map((c, i) => (
-          <Reveal key={c.t} delay={i * 0.08}>
+          <Reveal key={c.name} delay={i * 0.08}>
             <Link href={c.href} className="uy-cat">
               <div className="uy-cat-img">
-                <Image src={c.img} alt={c.t} fill sizes="(max-width: 980px) 100vw, 33vw" style={{ objectFit: "cover" }} />
+                <Image src={c.img} alt={c.name} fill sizes="(max-width: 980px) 100vw, 33vw" style={{ objectFit: "cover" }} />
               </div>
               <div className="uy-cat-meta">
                 <div>
                   <span className="uy-cat-sub">{c.sub}</span>
-                  <span className="uy-cat-name">{c.t}</span>
+                  <span className="uy-cat-name">{c.name}</span>
                 </div>
                 <span className="uy-cat-cta">{c.cta} →</span>
               </div>
@@ -463,15 +449,16 @@ function Categories() {
 
 // ── TESTIMONIALS ──────────────────────────────────────────────────────────
 function Testimonials() {
+  const { t } = useT();
   const [idx, setIdx] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % TESTIMONIALS.length), 5500);
-    return () => clearInterval(t);
+    const id = setInterval(() => setIdx((i) => (i + 1) % TESTIMONIALS.length), 5500);
+    return () => clearInterval(id);
   }, []);
   return (
     <section className="uy-testimonials">
       <Reveal>
-        <span className="uy-eyebrow">— MÜŞTERİLERİMİZ</span>
+        <span className="uy-eyebrow">{t.testimonialsEyebrow}</span>
       </Reveal>
       <div className="uy-quote-stage">
         {TESTIMONIALS.map((t, i) => (
@@ -505,24 +492,22 @@ function Testimonials() {
 
 // ── JOURNAL + NEWSLETTER ──────────────────────────────────────────────────
 function JournalAndNewsletter() {
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   return (
     <section className="uy-foot-feature">
       <Reveal className="uy-feat journal">
-        <span className="uy-eyebrow">— GÜNCE</span>
-        <h3 className="uy-display">Atölyeden notlar, sezon arasında.</h3>
-        <p>
-          Sezon kampanyaları, sınırlı sayıda üretilen parçalar ve atölye günlükleri için listemize
-          katılın.
-        </p>
+        <span className="uy-eyebrow">{t.journalEyebrow}</span>
+        <h3 className="uy-display">{t.journalTitle}</h3>
+        <p>{t.journalBody}</p>
         <Link href="/hakkimizda" className="uy-cta">
-          DEVAMINI OKU →
+          {t.journalCta}
         </Link>
       </Reveal>
       <Reveal delay={0.1} className="uy-feat newsletter">
-        <span className="uy-eyebrow">— BÜLTEN</span>
-        <h3 className="uy-display">Yeni siluetlere ilk siz erişin.</h3>
+        <span className="uy-eyebrow">{t.newsletterEyebrow}</span>
+        <h3 className="uy-display">{t.newsletterTitle}</h3>
         <form
           className="uy-news-form"
           onSubmit={(e) => {
@@ -532,19 +517,17 @@ function JournalAndNewsletter() {
         >
           <input
             type="email"
-            placeholder={sent ? "Listemize katıldınız ✓" : "E-posta adresiniz"}
+            placeholder={sent ? t.newsletterSent : t.newsletterPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={sent}
             required
           />
           <button type="submit" disabled={sent}>
-            {sent ? "GÖNDERİLDİ" : "ABONE OL"}
+            {sent ? t.newsletterSentCta : t.newsletterCta}
           </button>
         </form>
-        <span className="uy-fineprint">
-          Üye olarak <Link href="/gizlilik" style={{ textDecoration: "underline" }}>Gizlilik Politikamızı</Link> kabul etmiş olursunuz.
-        </span>
+        <span className="uy-fineprint">{t.newsletterFineprint}</span>
       </Reveal>
     </section>
   );
