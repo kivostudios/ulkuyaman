@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 import CookieBanner from "@/components/CookieBanner";
+import SentryInit from "@/components/SentryInit";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin", "latin-ext"],
@@ -63,6 +64,7 @@ export default function RootLayout({
     <html lang="tr" className={`${cormorant.variable} ${interTight.variable}`}>
       <body>
         <AuthProvider>
+          <SentryInit />
           <Navbar />
           <main>{children}</main>
           <Footer />
