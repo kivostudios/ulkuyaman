@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { isValidTCKimlik } from "@/lib/tckimlik";
 
 const addressSchema = z.object({
   name: z.string().min(2),
   phone: z.string().min(10),
   tcKimlik: z
     .string()
-    .regex(/^[0-9]{11}$/, "T.C. kimlik no 11 haneli olmalı")
+    .refine((s) => s === "" || isValidTCKimlik(s), {
+      message: "Geçersiz T.C. kimlik numarası (Mernis kontrol hanesi tutmuyor)",
+    })
     .optional()
     .or(z.literal("").transform(() => undefined)),
   city: z.string().min(2),
@@ -55,7 +58,16 @@ export async function DELETE(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await req.json();
-  await prisma.address.delete({ where: { id, userId: session.user.id } });
+  const { id } = (await req.json()) as { id?: string };
+  if (!id) return NextResponse.json({ error: "id gerekli" }, { status: 400 });
+
+  // IDOR koruması: deleteMany ile owner kontrolü zorunlu (delete sadece unique
+  // field'i kabul ediyor — userId compound check yapmıyor).
+  const result = await prisma.address.deleteMany({
+    where: { id, userId: session.user.id },
+  });
+  if (result.count === 0) {
+    return NextResponse.json({ error: "Adres bulunamadı" }, { status: 404 });
+  }
   return NextResponse.json({ ok: true });
 }

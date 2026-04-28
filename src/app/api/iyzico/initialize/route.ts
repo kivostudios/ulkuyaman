@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getIyzipay } from "@/lib/iyzico";
-import { validateCoupon } from "@/lib/coupon";
+import { applyCouponInTx } from "@/lib/coupon";
+import { isValidTCKimlik } from "@/lib/tckimlik";
 import { rateLimit, ipFrom } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -43,13 +44,14 @@ export async function POST(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
   }
 
-  // T.C. kimlik no kontrol — fatura ve iyzico için zorunlu
+  // T.C. kimlik no kontrol — fatura ve iyzico için zorunlu.
+  // Sadece format değil Mernis check digit'i de doğrulaniyor (rastgele 11 hane gecemiyor).
   const tcKimlik = address.tcKimlik || user.tcKimlik;
-  if (!tcKimlik || !/^[0-9]{11}$/.test(tcKimlik)) {
+  if (!tcKimlik || !isValidTCKimlik(tcKimlik)) {
     return NextResponse.json(
       {
         error:
-          "Fatura için T.C. kimlik numarası gerekli. Lütfen adresine 11 haneli T.C. kimlik numaranı ekle.",
+          "Geçerli T.C. kimlik numarası gerekli. Lütfen adresinizdeki kimlik numarasını kontrol edin.",
       },
       { status: 400 }
     );
@@ -102,16 +104,14 @@ export async function POST(req: NextRequest): Promise<Response> {
     let discount = 0;
     let usedCouponCode: string | null = null;
     if (couponCode) {
-      const result = await validateCoupon(couponCode, subtotal);
+      // applyCouponInTx atomic check+increment yapar — usageLimit race'i
+      // engellenir, paralel istekler ayni kupon'u limit'i asarak kullanamaz.
+      const result = await applyCouponInTx(tx, couponCode, subtotal);
       if (!result.ok) {
         throw new HttpError(400, result.error);
       }
       discount = result.discount;
       usedCouponCode = result.coupon.code;
-      await tx.coupon.update({
-        where: { code: result.coupon.code },
-        data: { usedCount: { increment: 1 } },
-      });
     }
 
     const total = Number(
