@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
+import { assertSafeUrl } from "@/lib/ssrf";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-// Resmi origin'den server-side cek, browser'a CORS-safe sekilde donur.
-// CropEditor'un canvas crop'i icin gerekli (browser cross-origin fetch
-// CORS olmayan kaynaklardan blob okuyamiyor).
+const MAX_BYTES = 25 * 1024 * 1024; // 25MB upstream limit (admin-only)
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -18,22 +17,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "url query parametresi gerekli" }, { status: 400 });
   }
 
-  // Sadece http/https
+  // SSRF: private IP / metadata / loopback adreslerine erismeyi engelle
   let parsed: URL;
   try {
-    parsed = new URL(target);
-  } catch {
-    return NextResponse.json({ error: "Gecersiz URL" }, { status: 400 });
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    return NextResponse.json({ error: "Sadece http/https URL'leri" }, { status: 400 });
+    parsed = await assertSafeUrl(target);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }
 
   let upstream: Response;
   try {
     upstream = await fetch(parsed.toString(), {
       // Bazi siteler hotlink korumasi icin referer kontrolu yapiyor.
-      // Origin'in kendi referer'ini gonderirsek hotlink filtresinden gecer.
+      redirect: "manual", // SSRF: 30x redirect ile bypass edilmesin
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
@@ -48,6 +44,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Manual redirect mode'da 30x gelirse follow etmiyoruz (SSRF'e karsi)
+  if (upstream.status >= 300 && upstream.status < 400) {
+    return NextResponse.json(
+      { error: `Origin redirect dondu (${upstream.status}); yeniden yonlendirme desteklenmiyor` },
+      { status: 502 }
+    );
+  }
   if (!upstream.ok) {
     return NextResponse.json(
       { error: `Origin ${upstream.status} ${upstream.statusText}` },
@@ -63,7 +66,23 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const contentLength = Number(upstream.headers.get("Content-Length") || 0);
+  if (contentLength > MAX_BYTES) {
+    return NextResponse.json(
+      { error: `Resim cok buyuk (${Math.round(contentLength / 1024 / 1024)}MB). Limit ${MAX_BYTES / 1024 / 1024}MB.` },
+      { status: 413 }
+    );
+  }
+
   const buf = await upstream.arrayBuffer();
+  // Header'da boyut yoksa burada da kontrol et
+  if (buf.byteLength > MAX_BYTES) {
+    return NextResponse.json(
+      { error: "Resim cok buyuk" },
+      { status: 413 }
+    );
+  }
+
   return new Response(buf, {
     status: 200,
     headers: {
@@ -72,3 +91,4 @@ export async function GET(req: NextRequest) {
     },
   });
 }
+

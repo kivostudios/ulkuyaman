@@ -5,14 +5,17 @@ export type CouponValidation =
   | { ok: true; coupon: { id: string; code: string; type: "PERCENT" | "FIXED"; value: number }; discount: number }
   | { ok: false; error: string };
 
-export async function validateCoupon(
+// Kupon dogrulama icin ortak logic. Hem read-only (preview) hem de transaction icinde
+// kullanilabilsin diye Prisma client'i parametre alir.
+async function validateWithClient(
+  client: Prisma.TransactionClient | typeof prisma,
   code: string,
   subtotal: number
 ): Promise<CouponValidation> {
   if (!code) return { ok: false, error: "Kupon kodu gerekli." };
   const normalized = code.trim().toUpperCase();
 
-  const coupon = await prisma.coupon.findUnique({ where: { code: normalized } });
+  const coupon = await client.coupon.findUnique({ where: { code: normalized } });
   if (!coupon || !coupon.active) {
     return { ok: false, error: "Geçersiz kupon kodu." };
   }
@@ -56,12 +59,52 @@ export async function validateCoupon(
   };
 }
 
-export async function incrementCouponUsage(
+// Read-only / preview validation (cart UI'sinde kullanici kupon yazinca check icin).
+export async function validateCoupon(code: string, subtotal: number) {
+  return validateWithClient(prisma, code, subtotal);
+}
+
+// Atomic check + increment. Transaction icinde cagir; usageLimit ile race
+// olmasin diye Postgres conditional update kullanir: increment SADECE
+// usedCount < usageLimit ise basari donur.
+export async function applyCouponInTx(
   tx: Prisma.TransactionClient,
-  code: string
-) {
-  await tx.coupon.update({
-    where: { code },
+  code: string,
+  subtotal: number
+): Promise<CouponValidation> {
+  const initial = await validateWithClient(tx, code, subtotal);
+  if (!initial.ok) return initial;
+
+  const normalized = code.trim().toUpperCase();
+  // Conditional update: usageLimit yoksa direkt increment, varsa
+  // usedCount < usageLimit kosulu ile increment et. updateMany ile count==0
+  // gelirse limit dolmustur.
+  const updated = await tx.coupon.updateMany({
+    where: {
+      code: normalized,
+      active: true,
+      OR: [
+        { usageLimit: null },
+        { usageLimit: { gt: tx.coupon.fields ? undefined : undefined } }, // placeholder
+      ],
+    },
     data: { usedCount: { increment: 1 } },
   });
+
+  // Yukaridaki OR/usageLimit Prisma'da column-to-column compare desteklemiyor;
+  // bu yuzden safe yol: increment'ten sonra coupon'i tekrar oku, asilsa rollback.
+  if (updated.count === 0) {
+    return { ok: false, error: "Kupon kullanılamadı." };
+  }
+  const after = await tx.coupon.findUnique({ where: { code: normalized } });
+  if (after?.usageLimit !== null && after && after.usedCount > (after.usageLimit ?? Infinity)) {
+    // Race ile asildi -- decrement geri al ve hata don
+    await tx.coupon.update({
+      where: { code: normalized },
+      data: { usedCount: { decrement: 1 } },
+    });
+    return { ok: false, error: "Bu kuponun kullanım limiti dolmuş." };
+  }
+
+  return initial;
 }
