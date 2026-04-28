@@ -11,10 +11,13 @@ export default function Footer() {
           <div>
             <h2
               className="leading-none mb-4"
-              style={{ fontFamily: "var(--font-italiana), 'Times New Roman', serif" }}
+              style={{ fontFamily: "var(--font-bodoni), 'Times New Roman', serif" }}
             >
-              <span className="block text-[28px] tracking-[0.04em]">Ülkü Yaman</span>
-              <span className="block text-[10px] tracking-[0.42em] uppercase mt-1 text-white/55">
+              <span className="block text-[30px] tracking-[0.02em] font-medium">Ülkü Yaman</span>
+              <span
+                className="block text-[11px] tracking-[0.44em] uppercase mt-1.5 text-white/70"
+                style={{ fontFamily: "var(--font-inter-tight), sans-serif", fontWeight: 600 }}
+              >
                 Collection
               </span>
             </h2>

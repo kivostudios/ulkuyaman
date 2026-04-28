@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter_Tight, Italiana } from "next/font/google";
+import { Cormorant_Garamond, Inter_Tight, Bodoni_Moda } from "next/font/google";
 import "./globals.css";
 import "./landing.css";
 import Navbar from "@/components/Navbar";
@@ -23,13 +23,15 @@ const interTight = Inter_Tight({
   variable: "--font-inter-tight",
 });
 
-// Brand wordmark — Italiana, ince + zarif italian luxury fashion fontu.
-// Sadece "Ülkü Yaman Collection" wordmark'i icin kullaniliyor.
-const italiana = Italiana({
-  subsets: ["latin"],
-  weight: ["400"],
+// Brand wordmark — Bodoni Moda. Klasik fashion editorial Didone serif
+// (Vogue/Harper's Bazaar tarzi). Variable weight 400-900, biz 500 + 700
+// kullaniyoruz; high-contrast stroke'lar ufak boyutta bile net gozukur.
+const bodoni = Bodoni_Moda({
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "700"],
+  style: ["normal", "italic"],
   display: "swap",
-  variable: "--font-italiana",
+  variable: "--font-bodoni",
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.ulkuyamancollection.com";
@@ -70,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr" className={`${cormorant.variable} ${interTight.variable} ${italiana.variable}`}>
+    <html lang="tr" className={`${cormorant.variable} ${interTight.variable} ${bodoni.variable}`}>
       <body>
         <AuthProvider>
           <SentryInit />
