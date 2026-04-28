@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { signIn } from "@/auth";
+import { getServerT } from "@/lib/locale-server";
 
 const ERROR_MESSAGES: Record<string, string> = {
   OAuthSignin: "Google bağlantısı başlatılamadı.",
@@ -17,6 +18,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; callbackUrl?: string }>;
 }) {
   const { error, callbackUrl } = await searchParams;
+  const { t } = await getServerT();
   // Open redirect koruması: sadece site içi yollara izin ver.
   const safeCallback =
     callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
@@ -45,10 +47,8 @@ export default async function LoginPage({
       <div className="flex flex-col items-center justify-center px-8 py-16">
         <div className="w-full max-w-sm">
           <div className="text-center mb-10">
-            <h1 className="text-2xl font-light tracking-wide mb-2">Hoş Geldiniz</h1>
-            <p className="text-sm text-gray-500">
-              Hesabınıza giriş yapın veya üye olun
-            </p>
+            <h1 className="text-2xl font-light tracking-wide mb-2">{t.loginTitle}</h1>
+            <p className="text-sm text-gray-500">{t.loginSubtitle}</p>
           </div>
 
           {/* Hata mesajı */}
@@ -76,7 +76,7 @@ export default async function LoginPage({
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
-              Google ile Giriş Yap
+              {t.loginGoogle}
             </button>
           </form>
 
@@ -85,29 +85,24 @@ export default async function LoginPage({
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-xs text-gray-400 bg-white px-4">
-              güvenli giriş
+              {t.loginSecure}
             </div>
           </div>
 
           <div className="bg-gray-50 p-6 text-center">
             <p className="text-xs text-gray-500 leading-relaxed">
-              Giriş yaparak{" "}
-              <a href="/gizlilik" className="underline hover:text-black">Gizlilik Politikamızı</a>{" "}
-              ve{" "}
-              <a href="/sozlesme" className="underline hover:text-black">Kullanım Şartlarımızı</a>{" "}
-              kabul etmiş olursunuz.
+              {t.loginConsent1}{" "}
+              <a href="/gizlilik" className="underline hover:text-black">{t.loginConsentPrivacy}</a>{" "}
+              {t.loginConsentAnd}{" "}
+              <a href="/mesafeli-satis" className="underline hover:text-black">{t.loginConsentTerms}</a>
+              {t.loginConsent2}
             </p>
           </div>
 
           <div className="mt-8 text-center">
-            <h3 className="text-sm font-medium mb-4">Üye avantajları</h3>
+            <h3 className="text-sm font-medium mb-4">{t.loginPerks}</h3>
             <div className="space-y-2">
-              {[
-                "Sipariş takibi ve geçmiş",
-                "Kayıtlı adresler",
-                "Favoriler listesi",
-                "Özel kampanya bildirimleri",
-              ].map((b) => (
+              {[t.loginPerk1, t.loginPerk2, t.loginPerk3, t.loginPerk4].map((b) => (
                 <div key={b} className="flex items-center gap-2 text-sm text-gray-600">
                   <span className="w-1.5 h-1.5 bg-black rounded-full" />
                   {b}

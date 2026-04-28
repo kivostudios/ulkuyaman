@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useState } from "react";
 import { parseImageMeta } from "@/lib/image-meta";
+import { useT } from "@/lib/i18n";
 
 type CardProduct = {
   id: string;
@@ -18,6 +19,7 @@ type CardProduct = {
 };
 
 export default function ProductCard({ product }: { product: CardProduct }) {
+  const { t } = useT();
   const [wished, setWished] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
   const [errored, setErrored] = useState(false);
@@ -44,20 +46,20 @@ export default function ProductCard({ product }: { product: CardProduct }) {
         ) : (
           <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center text-stone-400 text-xs gap-2 p-4 text-center">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
-            <span className="tracking-wider uppercase">Yakında</span>
+            <span className="tracking-wider uppercase">{t.soonAvailable}</span>
           </div>
         )}
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {product.isNew && (
-            <span className="bg-black text-white text-[10px] tracking-widest uppercase px-2 py-1 font-medium">Yeni</span>
+            <span className="bg-black text-white text-[10px] tracking-widest uppercase px-2 py-1 font-medium">{t.badgeNew}</span>
           )}
           {product.originalPrice && (
-            <span className="bg-red-600 text-white text-[10px] tracking-widest uppercase px-2 py-1 font-medium">İndirim</span>
+            <span className="bg-red-600 text-white text-[10px] tracking-widest uppercase px-2 py-1 font-medium">{t.badgeSale}</span>
           )}
           {product.isBestseller && !product.isNew && (
-            <span className="bg-white text-black text-[10px] tracking-widest uppercase px-2 py-1 font-medium border border-black">Çok Satan</span>
+            <span className="bg-white text-black text-[10px] tracking-widest uppercase px-2 py-1 font-medium border border-black">{t.badgeBestseller}</span>
           )}
         </div>
 
@@ -65,14 +67,14 @@ export default function ProductCard({ product }: { product: CardProduct }) {
         <button
           onClick={(e) => { e.preventDefault(); setWished(!wished); }}
           className="absolute top-3 right-3 p-2 bg-white/80 hover:bg-white rounded-full transition-all opacity-0 group-hover:opacity-100"
-          aria-label="Favorilere ekle"
+          aria-label={t.addToWishlist}
         >
           <Heart size={16} className={wished ? "fill-black text-black" : "text-gray-600"} />
         </button>
 
         {/* Quick add */}
         <div className="absolute bottom-0 left-0 right-0 bg-black/90 text-white text-xs tracking-widest uppercase text-center py-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 font-medium">
-          İncele
+          {t.quickView}
         </div>
       </div>
 

@@ -77,9 +77,15 @@ export default function Navbar() {
             {/* Orta: brand */}
             <Link
               href="/"
-              className="text-center text-[19px] md:text-[24px] font-semibold tracking-[0.18em] text-black whitespace-nowrap"
+              className="text-center text-black whitespace-nowrap leading-none"
+              style={{ fontFamily: "var(--font-italiana), 'Times New Roman', serif" }}
             >
-              ÜLKÜ YAMAN
+              <span className="block text-[22px] md:text-[30px] tracking-[0.04em]">
+                Ülkü Yaman
+              </span>
+              <span className="block text-[8px] md:text-[10px] tracking-[0.42em] uppercase mt-1 text-black/55">
+                Collection
+              </span>
             </Link>
 
             {/* Sağ: araçlar */}

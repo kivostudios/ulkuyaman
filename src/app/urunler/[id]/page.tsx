@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { parseImageMeta } from "@/lib/image-meta";
+import { getServerT } from "@/lib/locale-server";
 import AddToCart from "./AddToCart";
 
 export const dynamic = "force-dynamic";
@@ -32,11 +33,13 @@ export default async function ProductPage({ params }: Props) {
     take: 4,
   });
 
+  const { t } = await getServerT();
+
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-12">
       {/* Breadcrumb */}
       <nav className="text-xs text-gray-400 mb-8 flex gap-2">
-        <Link href="/" className="hover:text-black">Anasayfa</Link>
+        <Link href="/" className="hover:text-black">{t.home}</Link>
         <span>/</span>
         <Link href={`/kategori/${product.category.toLowerCase()}`} className="hover:text-black capitalize">
           {product.category}
@@ -67,8 +70,8 @@ export default async function ProductPage({ params }: Props) {
         {/* Bilgiler */}
         <div className="sticky top-24 self-start">
           <div className="flex gap-2 mb-4">
-            {product.isNew && <span className="text-xs tracking-widest uppercase bg-black text-white px-3 py-1">Yeni</span>}
-            {product.isBestseller && <span className="text-xs tracking-widest uppercase border border-black px-3 py-1">Çok Satan</span>}
+            {product.isNew && <span className="text-xs tracking-widest uppercase bg-black text-white px-3 py-1">{t.badgeNew}</span>}
+            {product.isBestseller && <span className="text-xs tracking-widest uppercase border border-black px-3 py-1">{t.badgeBestseller}</span>}
           </div>
 
           <p className="text-xs tracking-[0.25em] text-gray-500 uppercase mb-2">{product.material}</p>
@@ -95,7 +98,7 @@ export default async function ProductPage({ params }: Props) {
           )}
 
           <div className="mt-6 border-t border-gray-100 pt-6 space-y-3">
-            {["Hakiki deri üretim", "250₺ üzeri ücretsiz kargo", "90 gün koşulsuz iade", "14 gün değişim garantisi"].map((f) => (
+            {[t.feature1, t.feature2, t.feature3, t.feature4].map((f) => (
               <div key={f} className="flex items-center gap-3 text-sm text-gray-600">
                 <span className="w-1.5 h-1.5 bg-black rounded-full flex-shrink-0" />{f}
               </div>
@@ -107,7 +110,7 @@ export default async function ProductPage({ params }: Props) {
       {/* Benzer ürünler */}
       {related.length > 0 && (
         <section className="mt-24">
-          <h2 className="text-2xl font-light mb-8">Benzer Ürünler</h2>
+          <h2 className="text-2xl font-light mb-8">{t.similarProducts}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {related.map((p) => (
               <Link key={p.id} href={`/urunler/${p.id}`} className="group">

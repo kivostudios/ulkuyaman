@@ -9,7 +9,15 @@ export default function Footer() {
       <div className="max-w-[1400px] mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           <div>
-            <h2 className="text-xl font-bold tracking-[0.2em] uppercase mb-4">Ülkü Yaman</h2>
+            <h2
+              className="leading-none mb-4"
+              style={{ fontFamily: "var(--font-italiana), 'Times New Roman', serif" }}
+            >
+              <span className="block text-[28px] tracking-[0.04em]">Ülkü Yaman</span>
+              <span className="block text-[10px] tracking-[0.42em] uppercase mt-1 text-white/55">
+                Collection
+              </span>
+            </h2>
             <p className="text-sm text-gray-400 leading-relaxed">{t.footerBrandBlurb}</p>
             <div className="flex gap-4 mt-6">
               <a
