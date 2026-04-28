@@ -78,12 +78,15 @@ export default function Navbar() {
             <Link
               href="/"
               className="text-center text-black whitespace-nowrap leading-none"
-              style={{ fontFamily: "var(--font-italiana), 'Times New Roman', serif" }}
+              style={{ fontFamily: "var(--font-bodoni), 'Times New Roman', serif" }}
             >
-              <span className="block text-[22px] md:text-[30px] tracking-[0.04em]">
+              <span className="block text-[24px] md:text-[32px] tracking-[0.02em] font-medium">
                 Ülkü Yaman
               </span>
-              <span className="block text-[8px] md:text-[10px] tracking-[0.42em] uppercase mt-1 text-black/55">
+              <span
+                className="block text-[9px] md:text-[11px] tracking-[0.44em] uppercase mt-1.5 text-black/65"
+                style={{ fontFamily: "var(--font-inter-tight), sans-serif", fontWeight: 600 }}
+              >
                 Collection
               </span>
             </Link>
