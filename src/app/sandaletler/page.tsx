@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters from "@/components/ProductFilters";
 import SortDropdown from "@/components/SortDropdown";
+import { getServerT } from "@/lib/locale-server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ function pickStr(v: string | string[] | undefined) {
 
 export default async function SandaletlerPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
+  const { t } = await getServerT();
 
   const renk = pickStr(sp.renk)?.split(",").filter(Boolean) ?? [];
   const alt = pickStr(sp.alt)?.split(",").filter(Boolean) ?? [];
@@ -92,19 +94,18 @@ export default async function SandaletlerPage({ searchParams }: { searchParams: 
   return (
     <div className="max-w-[1500px] mx-auto px-6 md:px-10 py-10 md:py-14">
       <nav className="text-xs text-gray-400 mb-4 flex gap-2">
-        <Link href="/" className="hover:text-black">Anasayfa</Link>
+        <Link href="/" className="hover:text-black">{t.home}</Link>
         <span>/</span>
-        <span className="text-black">Sandaletler</span>
+        <span className="text-black">{t.sandals}</span>
       </nav>
 
       <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
         <div>
           <h1 className="text-3xl md:text-4xl font-light tracking-wide">
-            {q ? `"${q}" araması` : "Tüm Sandaletler"}
+            {q ? t.searchResults(q) : t.allSandals}
           </h1>
           <p className="text-sm text-gray-500 mt-2">
-            {products.length} ürün
-            {products.length === 60 && "+"}
+            {t.productCount(products.length, products.length === 60)}
           </p>
         </div>
         <SortDropdown />
@@ -117,12 +118,10 @@ export default async function SandaletlerPage({ searchParams }: { searchParams: 
           {products.length === 0 ? (
             <div className="text-center py-24 text-gray-400 border border-dashed border-black/10">
               <p className="text-lg mb-4">
-                {q
-                  ? "Aramanızla eşleşen ürün bulunamadı."
-                  : "Bu filtreler için ürün bulunamadı."}
+                {q ? t.noSearchResults : t.noProducts}
               </p>
               <Link href="/sandaletler" className="text-sm text-black underline">
-                Filtreleri temizle
+                {t.clearFilters}
               </Link>
             </div>
           ) : (

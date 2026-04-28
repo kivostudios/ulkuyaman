@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { ChevronDown, X } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 type FilterFacets = {
   colors: string[];
@@ -79,6 +80,7 @@ export default function ProductFilters({ facets }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useT();
 
   const initialColors = useMemo(
     () => (searchParams.get("renk")?.split(",").filter(Boolean) ?? []),
@@ -169,7 +171,7 @@ export default function ProductFilters({ facets }: Props) {
     <aside className="w-full lg:w-64 lg:shrink-0">
       <div className="flex items-baseline justify-between mb-2">
         <h2 className="text-[12px] tracking-[0.2em] font-semibold uppercase">
-          Filtrele
+          {t.filtersTitle}
           {activeCount > 0 && (
             <span className="ml-2 text-black/50 font-normal">({activeCount})</span>
           )}
@@ -180,17 +182,17 @@ export default function ProductFilters({ facets }: Props) {
             onClick={clearAll}
             className="text-[11px] text-black/50 hover:text-black underline underline-offset-2"
           >
-            Temizle
+            {t.reset}
           </button>
         )}
       </div>
 
-      <Section title="Hızlı Filtre">
+      <Section title={t.quickFilters}>
         <div className="space-y-2.5">
           {[
-            { key: "yeni", label: "Yeni gelenler", on: yeni },
-            { key: "indirim", label: "İndirimde", on: indirim },
-            { key: "stokta", label: "Sadece stoktakiler", on: stokta },
+            { key: "yeni", label: t.fNew, on: yeni },
+            { key: "indirim", label: t.fSale, on: indirim },
+            { key: "stokta", label: t.fInStock, on: stokta },
           ].map((f) => (
             <label
               key={f.key}
@@ -210,7 +212,7 @@ export default function ProductFilters({ facets }: Props) {
         </div>
       </Section>
 
-      <Section title="Fiyat (₺)">
+      <Section title={`${t.priceRange} (₺)`}>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -237,7 +239,7 @@ export default function ProductFilters({ facets }: Props) {
       </Section>
 
       {facets.colors.length > 0 && (
-        <Section title="Renk">
+        <Section title={t.color}>
           <div className="grid grid-cols-5 gap-3">
             {facets.colors.map((c) => {
               const k = colorKey(c);
@@ -281,7 +283,7 @@ export default function ProductFilters({ facets }: Props) {
       )}
 
       {facets.subcategories.length > 0 && (
-        <Section title="Model">
+        <Section title={t.subcategory}>
           <div className="space-y-2.5">
             {facets.subcategories.map((s) => (
               <label

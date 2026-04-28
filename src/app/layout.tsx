@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
+import { Cormorant_Garamond, Inter_Tight, Italiana } from "next/font/google";
 import "./globals.css";
 import "./landing.css";
 import Navbar from "@/components/Navbar";
@@ -21,6 +21,15 @@ const interTight = Inter_Tight({
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
   variable: "--font-inter-tight",
+});
+
+// Brand wordmark — Italiana, ince + zarif italian luxury fashion fontu.
+// Sadece "Ülkü Yaman Collection" wordmark'i icin kullaniliyor.
+const italiana = Italiana({
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+  variable: "--font-italiana",
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.ulkuyamancollection.com";
@@ -61,7 +70,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr" className={`${cormorant.variable} ${interTight.variable}`}>
+    <html lang="tr" className={`${cormorant.variable} ${interTight.variable} ${italiana.variable}`}>
       <body>
         <AuthProvider>
           <SentryInit />

@@ -1,19 +1,21 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-
-const OPTIONS = [
-  { value: "yeni", label: "Yeni gelenler" },
-  { value: "fiyat-asc", label: "Fiyat: artan" },
-  { value: "fiyat-desc", label: "Fiyat: azalan" },
-  { value: "popular", label: "Çok satanlar" },
-] as const;
+import { useT } from "@/lib/i18n";
 
 export default function SortDropdown() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useT();
   const current = searchParams.get("siralama") ?? "yeni";
+
+  const options = [
+    { value: "yeni", label: t.sortNewest },
+    { value: "fiyat-asc", label: t.sortPriceAsc },
+    { value: "fiyat-desc", label: t.sortPriceDesc },
+    { value: "popular", label: t.sortPopular },
+  ];
 
   function onChange(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -25,13 +27,13 @@ export default function SortDropdown() {
 
   return (
     <label className="flex items-center gap-2 text-[12px] text-black/70">
-      <span className="tracking-[0.18em] uppercase">Sırala</span>
+      <span className="tracking-[0.18em] uppercase">{t.sortBy}</span>
       <select
         value={current}
         onChange={(e) => onChange(e.target.value)}
         className="border-b border-black/30 bg-transparent py-1 pr-6 text-[13px] outline-none focus:border-black cursor-pointer"
       >
-        {OPTIONS.map((o) => (
+        {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
